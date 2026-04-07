@@ -1,7 +1,7 @@
 package com.waveneo.neowaves;
 
-import com.waveneo.neowaves.models.User;
-import com.waveneo.neowaves.repositories.UserCrudRepository;
+import com.waveneo.neowaves.model.User;
+import com.waveneo.neowaves.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -18,7 +18,7 @@ public class UserCrudRepositoryTest {
     private TestEntityManager testEntityManager;
 
     @Autowired
-    private UserCrudRepository userCrudRepository;
+    private UserRepository userCrudRepository;
 
     @Test
     void findByEmailReturnsCorrectUser() {

@@ -1,0 +1,102 @@
+body {
+    /* Глубокий синий градиент Frutiger Aero */
+    background: radial-gradient(circle at center, #1e5799 0%, #2989d8 50%, #207cca 100%);
+    background-attachment: fixed;
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+}
+
+.player-card {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 20px;
+    width: 500px;
+    padding: 40px;
+    box-shadow: 0 25px 50px rgba(0,0,0,0.4);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Эффект глянцевого блика сверху */
+.player-card::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.album-cover {
+    width: 280px;
+    height: 280px;
+    margin: 0 auto 20px;
+    border: 3px solid rgba(255,255,255,0.5);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+    background-size: cover;
+    background-position: center;
+    border-radius: 10px;
+    /* Плавная смена обложки при переключении */
+    transition: background-image 0.5s ease-in-out;
+    background-color: rgba(0,0,0,0.3);
+}
+
+h3 {
+    color: white;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    font-weight: 300;
+    margin: 15px 0;
+    font-size: 1.5em;
+    letter-spacing: 1px;
+}
+
+/* Скрываем стандартный плеер, так как управляем кастомными кнопками */
+audio {
+    display: none;
+}
+
+/* Блок кнопок с зеркальным отражением */
+.controls-demo {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 25px;
+    margin-top: 30px;
+    /* Эффект отражения кнопок вниз */
+    -webkit-box-reflect: below 5px linear-gradient(transparent, rgba(255,255,255,0.2));
+}
+
+.btn-frutiger {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 50%;
+    width: 55px;
+    height: 55px;
+    color: white;
+    font-size: 22px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    user-select: none;
+}
+
+.btn-frutiger:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+    box-shadow: 0 0 15px rgba(255,255,255,0.4);
+}
+
+.btn-frutiger:active {
+    transform: scale(0.95);
+}

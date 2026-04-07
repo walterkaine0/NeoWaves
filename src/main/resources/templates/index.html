@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html xmlns:th="http://thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>NeoWaves | Aero Player</title>
+    <!-- Подключаем твой style.css -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<div class="player-card">
+    <!-- Обложка (меняется через JS) -->
+    <div id="album-cover" class="album-cover"></div>
+
+    <div class="song-info">
+        <h2 id="track-title" style="color: white; text-shadow: 0 2px 10px rgba(0,0,0,0.5); margin-bottom: 5px;">Loading...</h2>
+        <p id="artist-name" style="color: rgba(255,255,255,0.8); margin: 0 0 15px 0; font-size: 1.1em;"></p>
+
+        <!-- Кнопка Like -->
+        <button class="btn-frutiger"
+                style="font-size: 14px; width: auto; height: 35px; padding: 0 20px; margin-bottom: 20px;"
+                onclick="likeCurrentSong()">
+            ❤ Like
+        </button>
+
+        <!-- Скрытый аудио-элемент -->
+        <audio id="main-audio"></audio>
+    </div>
+
+    <!-- Кнопки управления с отражением -->
+    <div class="controls-demo">
+        <div class="btn-frutiger" onclick="prevTrack()">⏮</div>
+        <div id="play-btn" class="btn-frutiger" style="transform: scale(1.2); background: rgba(255,255,255,0.3);" onclick="togglePlay()">▶</div>
+        <div class="btn-frutiger" onclick="nextTrack()">⏭</div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    // Собираем данные из Java в массив JavaScript без рекурсии
+    const songs = [];
+    /*[# th:each="s : ${songs}"]*/
+    songs.push({
+        id: /*[[${s.id}]]*/ 0,
+        title: /*[[${s.title}]]*/ 'Unknown',
+        s3Url: /*[[${s.s3Url}]]*/ '',
+        // Тянем обложку из альбома и имя артиста из его модели
+        coverUrl: /*[[${s.album != null ? s.album.coverUrl : ''}]]*/ '',
+        artist: /*[[${s.album != null && s.album.artist != null ? s.album.artist.name : 'Unknown Artist'}]]*/ 'Unknown'
+    });
+    /*[/]*/
+
+    let currentIndex = 0;
+
+    const audio = document.getElementById('main-audio');
+    const playBtn = document.getElementById('play-btn');
+    const trackTitle = document.getElementById('track-title');
+    const artistName = document.getElementById('artist-name');
+    const albumCover = document.getElementById('album-cover');
+
+    // Загрузка данных трека в интерфейс
+    function loadTrack(index) {
+        if (songs.length === 0) return;
+        const song = songs[index];
+
+        trackTitle.innerText = song.title;
+        artistName.innerText = song.artist;
+        albumCover.style.backgroundImage = `url('${song.coverUrl}')`;
+        audio.src = song.s3Url;
+    }
+
+    // Логика кнопки Play/Pause
+    function togglePlay() {
+        if (!audio.src) return;
+        if (audio.paused) {
+            audio.play();
+            playBtn.innerHTML = "⏸";
+        } else {
+            audio.pause();
+            playBtn.innerHTML = "▶";
+        }
+    }
+
+    // Переключение треков
+    function nextTrack() {
+        if (songs.length === 0) return;
+        currentIndex = (currentIndex + 1) % songs.length;
+        loadTrack(currentIndex);
+        audio.play();
+        playBtn.innerHTML = "⏸";
+    }
+
+    function prevTrack() {
+        if (songs.length === 0) return;
+        currentIndex = (currentIndex - 1 + songs.length) % songs.length;
+        loadTrack(currentIndex);
+        audio.play();
+        playBtn.innerHTML = "⏸";
+    }
+
+    // Функция Лайка (отправляет POST запрос на сервер)
+    function likeCurrentSong() {
+        const song = songs[currentIndex];
+        fetch('/like/' + song.id, {
+            method: 'POST'
+        })
+        .then(response => response.text())
+        .then(message => {
+            alert(message); // Показываем "Added to Favorites!"
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    // Авто-воспроизведение следующего трека
+    audio.onended = nextTrack;
+
+    // Инициализация при загрузке страницы
+    if (songs.length > 0) {
+        loadTrack(currentIndex);
+    }
+</script>
+</body>
+</html>
