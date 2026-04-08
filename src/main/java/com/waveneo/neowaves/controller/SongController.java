@@ -1,69 +1,163 @@
 package com.waveneo.neowaves.controller;
 
-import com.waveneo.neowaves.model.Playlist;
-import com.waveneo.neowaves.model.Song;
-import com.waveneo.neowaves.repository.PlaylistRepository;
-import com.waveneo.neowaves.repository.SongRepository;
+import com.waveneo.neowaves.model.*;
+import com.waveneo.neowaves.repository.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-
-import com.waveneo.neowaves.model.Playlist;
-import com.waveneo.neowaves.model.Song;
-import com.waveneo.neowaves.repository.PlaylistRepository;
-import com.waveneo.neowaves.repository.SongRepository;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.List;
 
 @Controller
 public class SongController {
 
-    private final SongRepository songRepository;
-    private final PlaylistRepository playlistRepository; // Добавь это поле
+    @Autowired
+    private SongRepository songRepository;
 
-    // Обнови конструктор, чтобы Spring внедрил оба репозитория
-    public SongController(SongRepository songRepository, PlaylistRepository playlistRepository) {
-        this.songRepository = songRepository;
-        this.playlistRepository = playlistRepository;
-    }
+    @Autowired
+    private PlaylistRepository playlistRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @GetMapping("/")
-    public String index(Model model) {
+    public String index(Model model, @RequestParam(required = false) String userEmail) {
         model.addAttribute("songs", songRepository.findAll());
+
+        if (userEmail != null && !userEmail.isEmpty()) {
+            // Показываем плейлисты только конкретного юзера
+            User user = userRepository.findByEmail(userEmail).orElse(null);
+            if (user != null) {
+                model.addAttribute("playlists", playlistRepository.findAll().stream()
+                        .filter(p -> p.getUser() != null && p.getUser().getId().equals(user.getId()))
+                        .toList());
+            } else {
+                model.addAttribute("playlists", new ArrayList<>());
+            }
+        } else {
+            // Если юзер не вошел — список плейлистов пуст
+            model.addAttribute("playlists", new ArrayList<>());
+        }
         return "index";
     }
 
+    // 2. ИСПРАВЛЕННЫЙ МЕТОД ЛАЙКА
     @PostMapping("/like/{songId}")
     @ResponseBody
-    public String likeSong(@PathVariable Long songId) {
-        // 1. Ищем или создаем плейлист "Избранное"
-        Playlist favorites = playlistRepository.findById(1L).orElseGet(() -> {
-            Playlist newPlaylist = new Playlist();
-            newPlaylist.setName("Favorites");
-            // Если у тебя уже есть юзер в базе, можно его привязать:
-            // newPlaylist.setUser(userRepository.findById(1L).orElse(null));
-            return playlistRepository.save(newPlaylist);
-        });
+    @Transactional
+    public String likeSong(@PathVariable Long songId, @RequestParam String userEmail) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // 2. Ищем песню
+        // Используем новый метод репозитория
+        Playlist favorites = playlistRepository.findByNameIgnoreCaseAndUserId("Favorites", user.getId())
+                .orElseGet(() -> {
+                    Playlist p = new Playlist();
+                    p.setName("Favorites");
+                    p.setUser(user);
+                    p.setSongs(new ArrayList<>());
+                    return playlistRepository.save(p);
+                });
+
         Song song = songRepository.findById(songId)
-                .orElseThrow(() -> new RuntimeException("Song not found with id: " + songId));
+                .orElseThrow(() -> new RuntimeException("Song not found"));
 
-        // 3. Инициализируем список, если он null (защита от ошибок)
-        if (favorites.getSongs() == null) {
-            favorites.setSongs(new ArrayList<>());
-        }
+        if (favorites.getSongs() == null) favorites.setSongs(new ArrayList<>());
 
-        // 4. Добавляем и сохраняем
-        if (!favorites.getSongs().contains(song)) {
+        if (favorites.getSongs().contains(song)) {
+            favorites.getSongs().remove(song);
+            playlistRepository.save(favorites);
+            return "Removed from Favorites";
+        } else {
             favorites.getSongs().add(song);
             playlistRepository.save(favorites);
             return "Added to Favorites!";
         }
-        return "Already in Favorites";
+    }
+
+    // 3. МЕТОД ДЛЯ ЗАГРУЗКИ ПЕСЕН ПЛЕЙЛИСТА
+    @GetMapping("/playlist/{id}/songs")
+    @ResponseBody
+    @Transactional(readOnly = true)
+    public List<Song> getPlaylistSongs(@PathVariable Long id) {
+        return playlistRepository.findById(id)
+                .map(p -> {
+                    p.getSongs().size(); // Принудительный "прогрев" списка
+                    return p.getSongs();
+                })
+                .orElse(new ArrayList<>());
+    }
+
+    @PostMapping("/playlist/{playlistId}/add/{songId}")
+    @ResponseBody
+    @Transactional
+    public String addSongToPlaylist(@PathVariable Long playlistId, @PathVariable Long songId) {
+        Playlist playlist = playlistRepository.findById(playlistId)
+                .orElseThrow(() -> new RuntimeException("Плейлист не найден"));
+        Song song = songRepository.findById(songId)
+                .orElseThrow(() -> new RuntimeException("Песня не найдена"));
+
+        if (!playlist.getSongs().contains(song)) {
+            playlist.getSongs().add(song);
+            playlistRepository.save(playlist);
+            return "Добавлено в " + playlist.getName();
+        }
+        return "Уже в плейлисте";
+    }
+
+    @PostMapping("/playlist/create")
+    @ResponseBody
+    @Transactional
+    public String createPlaylist(@RequestParam String name, @RequestParam String userEmail) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Playlist playlist = new Playlist();
+        playlist.setName(name);
+        playlist.setUser(user);
+        playlist.setSongs(new ArrayList<>());
+        playlistRepository.save(playlist);
+
+        return "Плейлист '" + name + "' создан!";
+    }
+
+    @PostMapping("/playlist/{playlistId}/remove/{songId}")
+    @ResponseBody
+    @Transactional
+    public String removeSongFromPlaylist(@PathVariable Long playlistId, @PathVariable Long songId) {
+        Playlist playlist = playlistRepository.findById(playlistId)
+                .orElseThrow(() -> new RuntimeException("Плейлист не найден"));
+        Song song = songRepository.findById(songId)
+                .orElseThrow(() -> new RuntimeException("Песня не найдена"));
+
+        if (playlist.getSongs().contains(song)) {
+            playlist.getSongs().remove(song);
+            playlistRepository.save(playlist);
+            return "Удалено из плейлиста";
+        }
+        return "Песни нет в этом плейлисте";
+    }
+
+    @PostMapping("/playlist/delete/{id}")
+    @ResponseBody
+    @Transactional
+    public ResponseEntity<String> deletePlaylist(@PathVariable Long id) {
+        Playlist playlist = playlistRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Плейлист не найден"));
+
+        // Запрещаем удалять избранное
+        if ("Favorites".equalsIgnoreCase(playlist.getName())) {
+            return ResponseEntity.badRequest().body("Нельзя удалить Избранное");
+        }
+
+        // Сначала очищаем связи с песнями, чтобы не было ошибок внешнего ключа
+        playlist.getSongs().clear();
+        playlistRepository.delete(playlist);
+
+        return ResponseEntity.ok("Плейлист удален");
     }
 }
-

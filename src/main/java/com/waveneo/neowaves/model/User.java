@@ -5,20 +5,28 @@ import lombok.*;
 
 import java.util.List;
 
-@NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
 @Entity
+@Table(name = "users") // Переименовываем таблицу, чтобы избежать конфликта с системным словом USER
 @Data
-@Table(name = "users") // "user" — зарезервированное слово в SQL, лучше назвать таблицу "users"
+@NoArgsConstructor
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id") // Явно указываем имя колонки
     private Long id;
-    private String username;
+
+    @Column(name = "email", unique = true)
     private String email;
 
+    @Column(name = "username")
+    private String username;
+
     @OneToMany(mappedBy = "user")
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @ToString.Exclude
     private List<Playlist> playlists;
 }
+
