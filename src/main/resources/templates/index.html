@@ -217,11 +217,13 @@
 
     // Функция входа
 window.handleLogin = () => {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    firebase.auth().signInWithPopup(provider)
+    firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
         .then(() => {
-            // Просто перезагружаем, onAuthStateChanged сам отправит токен ниже
-            location.reload();
+            const provider = new firebase.auth.GoogleAuthProvider();
+            return firebase.auth().signInWithPopup(provider);
+        })
+        .then(result => {
+            console.log("LOGIN OK", result.user);
         })
         .catch(err => console.error("Ошибка входа:", err));
 };
