@@ -76,36 +76,37 @@
     <!-- PLAYER BAR -->
     <audio id="main-audio"></audio>
 
-    <footer class="container-fluid fixed-bottom bg-dark text-white py-2 border-top border-secondary">
-        <div class="row align-items-center">
-            <!-- Лево: Трек -->
-            <div class="col-3 d-flex align-items-center">
-                <div class="bg-secondary rounded" style="width: 50px; height: 50px;"></div>
-                <div class="ms-3">
-                    <div class="fw-bold small">Track Title</div>
-                    <div class="text-secondary small">Artist</div>
-                </div>
-            </div>
-            <!-- Центр: Управление -->
-            <div class="col-6 text-center">
-                <div class="d-flex justify-content-center align-items-center gap-3 mb-1">
-                    <button class="btn btn-link text-white p-0">⏮</button>
-                    <button class="btn btn-light rounded-circle" style="width: 40px; height: 40px;">▶</button>
-                    <button class="btn btn-link text-white p-0">⏭</button>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                    <span class="small">0:00</span>
-                    <input type="range" class="form-range" style="accent-color: #1db954;">
-                    <span class="small">3:45</span>
-                </div>
-            </div>
-            <!-- Право: Громкость -->
-            <div class="col-3 text-end">
-                <span class="me-2">❤</span>
-                <input type="range" style="width: 80px;">
+    <audio id="main-audio"></audio>
+
+    <footer class="player-bar">
+        <div class="p-left">
+            <div id="mini-cover" class="p-cover"></div>
+            <div class="p-info">
+                <div id="track-title" class="p-title">Выберите трек</div>
+                <div id="artist-name" class="p-artist">...</div>
             </div>
         </div>
+
+        <div class="p-center">
+            <div class="p-buttons">
+                <button class="p-nav-btn" onclick="prevTrack()">⏮</button>
+                <button id="play-btn" class="p-play-btn" onclick="togglePlay()">▶</button>
+                <button class="p-nav-btn" onclick="nextTrack()">⏭</button>
+            </div>
+            <div class="p-timeline">
+                <span id="current-time">0:00</span>
+                <div class="p-progress-bg" id="progress-container">
+                    <div id="progress-fill"></div>
+                </div>
+                <span id="total-time">0:00</span>
+            </div>
+        </div>
+
+        <div class="p-right">
+            <button class="p-nav-btn" onclick="handleLike()">❤</button>
+        </div>
     </footer>
+
 </div>
 
 <!-- 1. ЛОГИКА ПЛЕЕРА И ПЛЕЙЛИСТОВ -->
@@ -124,114 +125,36 @@
 
     let currentIndex = 0;
 
-    // 2. Инициализация плеера
+    //испправление
     const audio = document.getElementById('main-audio');
     const pFill = document.getElementById('progress-fill');
     const pContainer = document.getElementById('progress-container');
 
-    // Форматирование времени
+    // Обновление прогресса
     audio.ontimeupdate = () => {
-    if (audio.duration) {
-        const pct = (audio.currentTime / audio.duration) * 100;
-        pFill.style.width = pct + '%';
-        document.getElementById('current-time').innerText = formatTime(audio.currentTime);
-    }
-};
+        if (audio.duration) {
+            const pct = (audio.currentTime / audio.duration) * 100;
+            pFill.style.width = pct + '%';
+            document.getElementById('current-time').innerText = formatTime(audio.currentTime);
+        }
+    };
+
+    // Загрузка времени трека
     audio.onloadedmetadata = () => {
-    document.getElementById('total-time').innerText = formatTime(audio.duration);
-};
+        document.getElementById('total-time').innerText = formatTime(audio.duration);
+    };
+
+    // Клик по таймбару (перемотка)
     pContainer.onclick = (e) => {
-    const width = pContainer.clientWidth;
-    const clickX = e.offsetX;
-    audio.currentTime = (clickX / width) * audio.duration;
-};
+        const width = pContainer.clientWidth;
+        const clickX = e.offsetX;
+        audio.currentTime = (clickX / width) * audio.duration;
+    };
+
     function formatTime(s) {
-    let min = Math.floor(s / 60);
-    let sec = Math.floor(s % 60);
-    return min + ":" + (sec < 10 ? '0' + sec : sec);
-}
-
-     // Обновление прогресса
-    audio.ontimeupdate = () => {
-        if (audio.duration) {
-            const pct = (audio.currentTime / audio.duration) * 100;
-            if (pFill) pFill.style.width = pct + '%';
-            const curTime = document.getElementById('current-time');
-            if (curTime) curTime.innerText = formatTime(audio.currentTime);
-        }
-    };
-
-
-    // Загрузка данных трека в интерфейс
-    function loadTrack(index) {
-        if (!songs[index]) return;
-        const s = songs[index];
-        document.getElementById('track-title').innerText = s.title;
-        document.getElementById('artist-name').innerText = s.artist;
-
-        const miniCover = document.getElementById('mini-cover');
-        if (miniCover) {
-            miniCover.style.backgroundImage = `url('${s.coverUrl}')`;
-            miniCover.style.backgroundSize = 'cover';
-        }
-
-        audio.src = s.s3Url;
-        audio.load();
-    }
-
-    // 3. Управление (Глобальные функции)
-    window.playSpecific = (i) => {
-        currentIndex = i;
-        loadTrack(i);
-        audio.play();
-        if (playBtn) playBtn.innerText = "⏸";
-    };
-
-    window.togglePlay = () => {
-        if (!audio.src) return; // Если ничего не загружено
-        if (audio.paused) {
-            audio.play();
-            if (playBtn) playBtn.innerText = "⏸";
-        } else {
-            audio.pause();
-            if (playBtn) playBtn.innerText = "▶";
-        }
-    };
-
-    window.nextTrack = () => {
-        currentIndex = (currentIndex + 1) % songs.length;
-        window.playSpecific(currentIndex);
-    };
-
-    window.prevTrack = () => {
-        currentIndex = (currentIndex - 1 + songs.length) % songs.length;
-        window.playSpecific(currentIndex);
-    };
-
-    // 4. Логика таймбара
-    audio.ontimeupdate = () => {
-        if (audio.duration) {
-            const pct = (audio.currentTime / audio.duration) * 100;
-            if (pFill) pFill.style.width = pct + '%';
-
-            const curTimeEl = document.getElementById('current-time');
-            if (curTimeEl) curTimeEl.innerText = formatTime(audio.currentTime);
-        }
-    };
-
-    audio.onloadedmetadata = () => {
-        const totalTimeEl = document.getElementById('total-time');
-        if (totalTimeEl) totalTimeEl.innerText = formatTime(audio.duration);
-    };
-
-    if (pContainer) {
-        pContainer.onclick = (e) => {
-            const width = pContainer.clientWidth;
-            const clickX = e.offsetX;
-            if (audio.duration) {
-                audio.currentTime = (clickX / width) * audio.duration;
-            }
-        };
+        let min = Math.floor(s / 60);
+        let sec = Math.floor(s % 60);
+        return min + ":" + (sec < 10 ? '0' + sec : sec);
     }
 
     // Автоматический переход к следующему треку
@@ -390,42 +313,6 @@ window.removeFromPlaylist = (playlistId, songId) => {
             });
         }
     });
-
-    const waveform = document.getElementById('waveform-container');
-const barCount = 40; // Сколько полосок будет в волнорезе
-
-// Генерируем полоски
-for (let i = 0; i < barCount; i++) {
-    const bar = document.createElement('div');
-    bar.className = 'wave-bar';
-    // Случайная высота для эффекта "записанного звука"
-    const randomHeight = Math.floor(Math.random() * 40) + 15;
-    bar.style.height = `${randomHeight}px`;
-    waveform.appendChild(bar);
-}
-
-// Анимация прогресса (подсветка синим)
-audio.addEventListener('timeupdate', () => {
-    const progress = audio.currentTime / audio.duration;
-    const activeBarIndex = Math.floor(progress * barCount);
-
-    const bars = waveform.getElementsByClassName('wave-bar');
-    for (let i = 0; i < bars.length; i++) {
-        if (i <= activeBarIndex) {
-            bars[i].classList.add('active');
-        } else {
-            bars[i].classList.remove('active');
-        }
-    }
-});
-
-// Клик по волне для перемотки
-waveform.addEventListener('click', (e) => {
-    const rect = waveform.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const percentage = x / rect.width;
-    audio.currentTime = percentage * audio.duration;
-});
 
 </script>
 </body>

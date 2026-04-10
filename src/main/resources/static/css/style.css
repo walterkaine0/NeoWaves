@@ -108,58 +108,54 @@ body {
     box-shadow: 0 10px 25px rgba(0,0,0,0.2);
 }
 
-/* PLAYER BAR - Чистый дизайн */
-/* ============================================================
-   ОБНОВЛЕННЫЙ ПЛЕЕР (Spotify + Frutiger Aero)
-   ============================================================ */
-
-/* ГЛАВНЫЙ ФИКС ПЛЕЕРА */
-.spotify-footer {
-    position: fixed; bottom: 0; left: 0; width: 100%; height: 90px;
-    background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(25px);
+/* --- SPOTIFY AERO PLAYER BAR --- */
+.player-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 90px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(25px) saturate(180%);
     border-top: 1px solid rgba(255, 255, 255, 0.3);
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 30px; z-index: 9999;
+    display: flex; /* Магия здесь */
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 25px;
+    z-index: 9999;
 }
 
-/* Сетки блоков */
-.f-left, .f-right { width: 30%; display: flex; align-items: center; }
-.f-right { justify-content: flex-end; }
-.f-center { width: 40%; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+/* Секции плеера */
+.p-left, .p-right { width: 30%; display: flex; align-items: center; }
+.p-right { justify-content: flex-end; }
+.p-center {
+    width: 40%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
 
 /* Обложка и текст */
-.f-cover { width: 56px; height: 56px; border-radius: 8px; background: rgba(255,255,255,0.1); background-size: cover; margin-right: 12px; }
-.f-title { font-weight: bold; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.f-artist { font-size: 12px; opacity: 0.6; }
+.p-cover { width: 56px; height: 56px; border-radius: 8px; background: #222; background-size: cover; margin-right: 15px; }
+.p-title { font-weight: bold; font-size: 14px; color: white; }
+.p-artist { font-size: 12px; opacity: 0.6; color: white; }
 
-/* Кнопки */
-.f-btns { display: flex; align-items: center; gap: 20px; }
-.f-nav { background: none; border: none; color: white; font-size: 20px; cursor: pointer; }
+/* Кнопки управления */
+.p-buttons { display: flex; align-items: center; gap: 20px; }
+.p-nav-btn { background: none; border: none; color: white; font-size: 20px; cursor: pointer; transition: 0.2s; }
+.p-nav-btn:hover { transform: scale(1.1); }
 
-/* Глянцевая кнопка Play Aero */
-.f-play {
-    width: 45px !important; height: 45px !important; border-radius: 50% !important;
-    background: radial-gradient(circle at 30% 30%, #fff 0%, #e0e0e0 100%) !important;
-    border: 2px solid white !important; color: #0072ff !important;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important; cursor: pointer;
-    display: flex; align-items: center; justify-content: center; font-size: 18px;
+/* Глянцевая кнопка Aero */
+.p-play-btn {
+    width: 45px; height: 45px; border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #fff 0%, #dcdcdc 100%);
+    border: 2px solid white; color: #0072ff; cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2); font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
 }
 
-/* ТАЙМБАР */
-.f-timeline { display: flex; align-items: center; gap: 10px; width: 100%; font-size: 11px; }
-.f-progress-bg { flex-grow: 1; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; cursor: pointer; position: relative; }
-#progress-fill { height: 100%; width: 0%; background: #00fff2; border-radius: 2px; box-shadow: 0 0 10px #00fff2; }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* Таймбар */
+.p-timeline { display: flex; align-items: center; gap: 10px; width: 100%; font-size: 11px; }
+.p-progress-bg { flex-grow: 1; height: 5px; background: rgba(255,255,255,0.2); border-radius: 3px; cursor: pointer; position: relative; }
+#progress-fill { height: 100%; width: 0%; background: #00fff2; border-radius: 3px; box-shadow: 0 0 10px #00fff2; }
