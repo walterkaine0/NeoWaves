@@ -10,6 +10,8 @@
     grid-column: 2; /* Четко во вторую колонку */
     overflow-y: auto;
     padding: 40px;
+    overflow-y: auto !important; /* Разрешаем вертикальный скролл */
+    height: calc(100vh - 90px); /* Ограничиваем высоту до начала плеера */
 }
 
 .sidebar {
