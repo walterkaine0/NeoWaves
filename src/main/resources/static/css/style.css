@@ -2,7 +2,7 @@
 body {
     margin: 0;
     height: 100vh;
-    font-family: 'Segoe UI', sans-serif;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
     background:
         radial-gradient(circle at 50% -20%, rgba(255,255,255,0.4) 0%, transparent 60%),
         linear-gradient(135deg, #0051a8 0%, #0072ff 50%, #00c6ff 100%);
@@ -14,130 +14,138 @@ body {
 .app-container {
     display: grid;
     grid-template-columns: 280px 1fr;
-    grid-template-rows: 1fr 130px; /* Увеличили плеер для волны */
+    grid-template-rows: 1fr 100px; /* Уменьшили высоту под обычный плеер */
     height: 100vh;
 }
 
-/* SIDEBAR - глянцевый пластик */
+/* SIDEBAR - Глянец и анимации */
 .sidebar {
     background: rgba(255, 255, 255, 0.12);
     backdrop-filter: blur(25px) saturate(160%);
-    border-right: 1px solid rgba(255, 255, 255, 0.4);
+    border-right: 1px solid rgba(255, 255, 255, 0.3);
     padding: 30px 20px;
-    box-shadow: inset -10px 0 30px rgba(0,0,0,0.1);
-}
-
-.logo {
-    font-size: 30px;
-    font-weight: 900;
-    font-style: italic;
-    text-shadow: 0 0 15px rgba(255,255,255,0.7);
-    margin-bottom: 40px;
-}
-
-.menu-item, .playlist-item {
-    padding: 12px 20px;
-    margin: 8px 0;
-    border-radius: 18px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid transparent;
-    transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.menu-item:hover, .playlist-item:hover {
-    background: rgba(255, 255, 255, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    transform: scale(1.03) translateX(8px);
-}
-
-/* Кнопка создания - как капля воды */
-.add-playlist {
-    background: linear-gradient(to bottom, #00fff2 0%, #0072ff 100%);
-    border: 2px solid rgba(255,255,255,0.7);
-    border-radius: 25px;
-    padding: 14px;
-    font-weight: bold;
-    box-shadow: 0 10px 20px rgba(0, 114, 255, 0.4), inset 0 5px 10px rgba(255,255,255,0.5);
-    cursor: pointer;
-    margin-top: auto;
-}
-
-/* MAIN CONTENT - фиксируем масштаб */
-.main-content {
-    overflow-y: auto;
-    padding: 40px;
     display: flex;
     flex-direction: column;
 }
 
+.logo {
+    font-size: 26px;
+    font-weight: 900;
+    font-style: italic;
+    text-shadow: 0 0 15px rgba(255,255,255,0.7);
+    margin-bottom: 35px;
+}
+
+/* Анимация появления плейлистов */
+.playlist-item, .menu-item {
+    padding: 12px 20px;
+    margin: 6px 0;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    animation: slideIn 0.5s ease-out;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.playlist-item:hover, .menu-item.active {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    transform: scale(1.05) translateX(10px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+/* Кнопка создания - как капля */
+.add-playlist {
+    background: linear-gradient(to bottom, #00fff2 0%, #0072ff 100%);
+    border: 2px solid rgba(255,255,255,0.7);
+    border-radius: 25px;
+    padding: 12px;
+    font-weight: bold;
+    color: white;
+    box-shadow: 0 8px 20px rgba(0, 114, 255, 0.3);
+    cursor: pointer;
+    margin-top: auto;
+    transition: 0.2s;
+}
+
+.add-playlist:hover { filter: brightness(1.1); transform: translateY(-2px); }
+
+/* MAIN CONTENT */
+.main-content {
+    overflow-y: auto;
+    padding: 40px;
+}
+
 .album-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 30px;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 25px;
 }
 
 .album-card {
     background: rgba(255, 255, 255, 0.1);
     border-radius: 24px;
     padding: 15px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     transition: 0.4s;
+    cursor: pointer;
+}
+
+.album-card:hover {
+    background: rgba(255, 255, 255, 0.18);
+    transform: translateY(-8px);
 }
 
 .album-card img {
     width: 100%;
     border-radius: 18px;
-    box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
 }
 
-/* PLAYER BAR - SoundCloud Style */
+/* PLAYER BAR - Чистый дизайн */
+/* ============================================================
+   ОБНОВЛЕННЫЙ ПЛЕЕР (Spotify + Frutiger Aero)
+   ============================================================ */
+
+/* 1. Основной контейнер плеера */
+/* ГЛАВНЫЙ ФИКС ПЛЕЕРА */
 .player-bar {
-    grid-column: 1 / -1;
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(40px);
-    border-top: 2px solid rgba(255, 255, 255, 0.5);
-    display: flex;
-    align-items: center;
-    padding: 0 50px;
+    position: fixed; bottom: 0; left: 0; width: 100%; height: 90px;
+    background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(25px);
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
+    display: flex; align-items: center; padding: 0 20px; z-index: 9999;
 }
 
-/* Волнообразный таймбар */
-.waveform {
-    flex-grow: 1;
-    height: 50px;
-    display: flex;
-    align-items: center;
-    gap: 3px;
-    margin: 0 40px;
+/* Распределение блоков */
+.p-left, .p-right { width: 30%; display: flex; align-items: center; }
+.p-right { justify-content: flex-end; }
+.p-center { width: 40%; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+
+/* Инфо о треке */
+.p-cover { width: 56px; height: 56px; border-radius: 8px; background: rgba(255,255,255,0.1); background-size: cover; margin-right: 12px; }
+.p-title { font-weight: bold; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.p-artist { font-size: 12px; opacity: 0.6; }
+
+/* Кнопки */
+.p-buttons { display: flex; align-items: center; gap: 20px; }
+.p-nav { background: none; border: none; color: white; font-size: 20px; cursor: pointer; }
+
+/* ГЛЯНЦЕВАЯ КНОПКА PLAY */
+.p-play {
+    width: 45px; height: 45px; border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #fff 0%, #e0e0e0 100%);
+    border: 2px solid white; color: #0072ff; cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2); font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
 }
 
-.wave-bar {
-    width: 4px;
-    background: rgba(255, 255, 255, 0.3);
-    border-radius: 2px;
-}
-
-.wave-bar.active {
-    background: #00fff2;
-    box-shadow: 0 0 15px #00fff2;
-}
-
-/* Глянцевая кнопка Play */
-.play-btn {
-    width: 75px !important;
-    height: 75px !important;
-    border-radius: 50% !important;
-    background: radial-gradient(circle at 30% 30%, #ffffff 0%, #cfcfcf 100%) !important;
-    box-shadow: 0 0 30px rgba(255,255,255,0.4), inset 0 -5px 10px rgba(0,0,0,0.2) !important;
-    border: 3px solid rgba(255,255,255,0.8) !important;
-}
-
-.waveform {
-    display: flex;
-    align-items: center; /* Выравнивание по центру по вертикали */
-    justify-content: center;
-    gap: 3px;
-    width: 100%;
-    height: 60px;
-    cursor: pointer;
-}
+/* ТАЙМБАР (Spotify Style) */
+.p-timeline { display: flex; align-items: center; gap: 10px; width: 100%; font-size: 11px; }
+.p-bar-bg { flex-grow: 1; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; cursor: pointer; position: relative; }
+#progress-fill { height: 100%; width: 0%; background: #00fff2; border-radius: 2px; box-shadow: 0 0 10px #00fff2; }

@@ -74,33 +74,43 @@
 
     <!-- PLAYER BAR -->
     <audio id="main-audio"></audio>
-    <footer class="player-bar">
-        <div class="track-info">
-            <div id="mini-cover" class="mini-cover"></div>
-            <div class="text">
-                <div id="track-title" class="title">Выберите трек</div>
-                <div id="artist-name" class="artist">...</div>
-            </div>
-        </div>
-        <div class="controls" style="flex-grow: 1; display: flex; flex-direction: column; align-items: center;">
-            <div class="waveform" id="waveform-container">
-                <!-- Полоски сгенерирует JavaScript -->
-            </div>
 
-            <div class="buttons" style="margin-top: 10px;">
-                <button class="ctrl-btn" onclick="prevTrack()">⏮</button>
-                <button id="play-btn" class="play-btn" onclick="togglePlay()">▶</button>
-                <button class="ctrl-btn" onclick="nextTrack()">⏭</button>
+    <footer class="player-bar">
+        <!-- ЛЕВАЯ ЧАСТЬ: ИНФО -->
+        <div class="p-left">
+            <div id="mini-cover" class="p-cover"></div>
+            <div class="p-text">
+                <div id="track-title" class="p-title">Выберите трек</div>
+                <div id="artist-name" class="p-artist">...</div>
             </div>
         </div>
-        <div class="volume-side">
-            <button class="like-btn" style="background:none; border:none; color:white; font-size: 24px; cursor:pointer;" onclick="handleLike()">❤</button>
+
+        <!-- ЦЕНТРАЛЬНАЯ ЧАСТЬ: УПРАВЛЕНИЕ -->
+        <div class="p-center">
+            <div class="p-buttons">
+                <button class="p-nav" onclick="prevTrack()">⏮</button>
+                <button id="play-btn" class="p-play" onclick="togglePlay()">▶</button>
+                <button class="p-nav" onclick="nextTrack()">⏭</button>
+            </div>
+            <div class="p-timeline">
+                <span id="current-time">0:00</span>
+                <div class="p-bar-bg" id="progress-container">
+                    <div id="progress-fill"></div>
+                </div>
+                <span id="total-time">0:00</span>
+            </div>
+        </div>
+
+        <!-- ПРАВАЯ ЧАСТЬ: ДОПЫ -->
+        <div class="p-right">
+            <button class="p-nav" onclick="handleLike()">❤</button>
         </div>
     </footer>
 </div>
 
 <!-- 1. ЛОГИКА ПЛЕЕРА И ПЛЕЙЛИСТОВ -->
 <script th:inline="javascript">
+    // 1. Формируем список песен из Thymeleaf
     let songs = [];
     /*[# th:each="s : ${songs}"]*/
     songs.push({
@@ -113,21 +123,95 @@
     /*[/]*/
 
     let currentIndex = 0;
+
+    // 2. Инициализация плеера
     const audio = document.getElementById('main-audio');
     const playBtn = document.getElementById('play-btn');
+    const pFill = document.getElementById('progress-fill');
+    const pContainer = document.getElementById('progress-container');
 
-    function loadTrack(index) {
-        if (!songs[index]) return;
-        document.getElementById('track-title').innerText = songs[index].title;
-        document.getElementById('artist-name').innerText = songs[index].artist;
-        document.getElementById('mini-cover').style.backgroundImage = `url('${songs[index].coverUrl}')`;
-        audio.src = songs[index].s3Url;
+    // Функция форматирования времени (0:00)
+    function formatTime(s) {
+        if (!s || isNaN(s)) return "0:00";
+        let min = Math.floor(s / 60);
+        let sec = Math.floor(s % 60);
+        return min + ":" + (sec < 10 ? '0' + sec : sec);
     }
 
-    window.playSpecific = (i) => { currentIndex = i; loadTrack(i); audio.play(); playBtn.innerText = "⏸"; };
-    window.togglePlay = () => { if(audio.paused){audio.play(); playBtn.innerText="⏸";}else{audio.pause(); playBtn.innerText="▶";} };
-    window.nextTrack = () => { currentIndex = (currentIndex + 1) % songs.length; playSpecific(currentIndex); };
-    window.prevTrack = () => { currentIndex = (currentIndex - 1 + songs.length) % songs.length; playSpecific(currentIndex); };
+    // Загрузка данных трека в интерфейс
+    function loadTrack(index) {
+        if (!songs[index]) return;
+        const s = songs[index];
+        document.getElementById('track-title').innerText = s.title;
+        document.getElementById('artist-name').innerText = s.artist;
+
+        const miniCover = document.getElementById('mini-cover');
+        if (miniCover) {
+            miniCover.style.backgroundImage = `url('${s.coverUrl}')`;
+            miniCover.style.backgroundSize = 'cover';
+        }
+
+        audio.src = s.s3Url;
+        audio.load();
+    }
+
+    // 3. Управление (Глобальные функции)
+    window.playSpecific = (i) => {
+        currentIndex = i;
+        loadTrack(i);
+        audio.play();
+        if (playBtn) playBtn.innerText = "⏸";
+    };
+
+    window.togglePlay = () => {
+        if (!audio.src) return; // Если ничего не загружено
+        if (audio.paused) {
+            audio.play();
+            if (playBtn) playBtn.innerText = "⏸";
+        } else {
+            audio.pause();
+            if (playBtn) playBtn.innerText = "▶";
+        }
+    };
+
+    window.nextTrack = () => {
+        currentIndex = (currentIndex + 1) % songs.length;
+        window.playSpecific(currentIndex);
+    };
+
+    window.prevTrack = () => {
+        currentIndex = (currentIndex - 1 + songs.length) % songs.length;
+        window.playSpecific(currentIndex);
+    };
+
+    // 4. Логика таймбара
+    audio.ontimeupdate = () => {
+        if (audio.duration) {
+            const pct = (audio.currentTime / audio.duration) * 100;
+            if (pFill) pFill.style.width = pct + '%';
+
+            const curTimeEl = document.getElementById('current-time');
+            if (curTimeEl) curTimeEl.innerText = formatTime(audio.currentTime);
+        }
+    };
+
+    audio.onloadedmetadata = () => {
+        const totalTimeEl = document.getElementById('total-time');
+        if (totalTimeEl) totalTimeEl.innerText = formatTime(audio.duration);
+    };
+
+    if (pContainer) {
+        pContainer.onclick = (e) => {
+            const width = pContainer.clientWidth;
+            const clickX = e.offsetX;
+            if (audio.duration) {
+                audio.currentTime = (clickX / width) * audio.duration;
+            }
+        };
+    }
+
+    // Автоматический переход к следующему треку
+    audio.onended = () => { window.nextTrack(); };
 
     // ФУНКЦИЯ ОТКРЫТИЯ ПЛЕЙЛИСТА
     window.openPlaylist = (id) => {
