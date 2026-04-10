@@ -1,3 +1,19 @@
+/* Главный контейнер (сетка приложения) */
+.app-container {
+    display: flex; /* Переходим на flex для простоты */
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+}
+
+.main-content {
+    flex-grow: 1; /* Занимает всё оставшееся место */
+    height: calc(100vh - 90px); /* Минус высота плеера */
+    overflow-y: auto; /* Скролл только здесь */
+    padding: 40px;
+    background: transparent;
+}
+
 /* Основной контейнер плеера */
 .music-player {
     position: fixed;
@@ -53,18 +69,22 @@
 
 
 .sidebar {
-    background: rgba(255, 255, 255, 0.12);
-    backdrop-filter: blur(25px) saturate(160%);
-    border-right: 1px solid rgba(255, 255, 255, 0.4);
-    padding: 30px 20px;
-    box-shadow: inset -10px 0 30px rgba(0,0,0,0.1);
+    width: 260px;
+    height: 100vh;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    border-right: 1px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    flex-shrink: 0; /* Чтобы не сжимался */
+    z-index: 100;
 }
 
 .album-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     gap: 25px;
-    padding-bottom: 40px; /* Отступ снизу, чтобы последний ряд не перекрывал плеер */
 }
 
 .album-card {
@@ -81,11 +101,5 @@
     box-shadow: 0 15px 35px rgba(0,0,0,0.5);
 }
 
-.main-content {
-    margin-left: 260px; /* Должно быть равно ширине сайдбара */
-    padding: 40px;
-    width: calc(100% - 260px);
-    height: calc(100vh - 90px); /* Чтобы не залезало под плеер */
-    overflow-y: auto;
-}
+
 
