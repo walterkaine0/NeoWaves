@@ -7,7 +7,6 @@
     <script src="https://tailwindcss.com"></script>
 
     <link rel="stylesheet" th:href="@{/css/style.css}">
-    <link href="https://jsdelivr.net" rel="stylesheet">
 
 
     <!-- Firebase SDK -->
@@ -105,30 +104,29 @@
     </div>
 </footer>
 
-<script>
+<script th:inline="javascript">
 
 // --- 2. Массив песен (Thymeleaf) ---
 // 1. Формируем массив песен из Spring Model
-let songs = [];
-/*[# th:each="s : ${songs}"]*/
-    /*[# th:if="${s != null}"]*/ // Проверка, что песня существует
-    songs.push({
-        id: [[${s?.id}]],
-        title: [[${s?.title ?: 'Без названия'}]],
-        s3Url: [[${s?.s3Url ?: ''}]],
-        coverUrl: [[${s?.album?.coverUrl ?: ''}]],
-        artist: [[${s?.album?.artist?.name ?: 'Неизвестен'}]]
-    });
+    let songs = [];
+    /*[# th:each="s : ${songs}"]*/
+        /*[# th:if="${s != null}"]*/
+        songs.push({
+            id: [[${s?.id}]],
+            title: [[${s?.title ?: 'Без названия'}]],
+            s3Url: [[${s?.s3Url ?: ''}]],
+            coverUrl: [[${s?.album?.coverUrl ?: ''}]],
+            artist: [[${s?.album?.artist?.name ?: 'Неизвестен'}]]
+        });
+        /*[/]*/
     /*[/]*/
-/*[/]*/
-
     let currentIndex = 0;
     const audio = document.getElementById('main-audio');
     const playBtn = document.getElementById('play-btn');
 
     // 2. Функции плеера
     function loadTrack(index) {
-        if (!songs[index]) return;
+        if (songs.length === 0) return;
         const s = songs[index];
         document.getElementById('track-title').innerText = s.title;
         document.getElementById('artist-name').innerText = s.artist;
@@ -136,14 +134,37 @@ let songs = [];
         audio.src = s.s3Url;
     }
 
+    // Вызываем загрузку первого трека, если они есть
+    if (songs.length > 0) { loadTrack(0); }
+
     window.playSpecific = (i) => { currentIndex = i; loadTrack(i); audio.play(); playBtn.innerText = "⏸"; };
-    window.togglePlay = () => {
-        if (!audio.src && songs.length > 0) loadTrack(currentIndex);
-        if(audio.paused){ audio.play(); playBtn.innerText="⏸"; }
-        else { audio.pause(); playBtn.innerText="▶"; }
+    window.togglePlay = function() {
+        if (songs.length === 0) return;
+        if (!audio.src) loadTrack(currentIndex);
+
+        if (audio.paused) {
+            audio.play();
+            playBtn.innerText = "⏸";
+        } else {
+            audio.pause();
+            playBtn.innerText = "▶";
+        }
     };
-    window.nextTrack = () => { currentIndex = (currentIndex + 1) % songs.length; playSpecific(currentIndex); };
-    window.prevTrack = () => { currentIndex = (currentIndex - 1 + songs.length) % songs.length; playSpecific(currentIndex); };
+    window.nextTrack = function() {
+        if (songs.length === 0) return;
+        currentIndex = (currentIndex + 1) % songs.length;
+        loadTrack(currentIndex);
+        audio.play();
+        playBtn.innerText = "⏸";
+    };
+
+    window.prevTrack = function() {
+        if (songs.length === 0) return;
+        currentIndex = (currentIndex - 1 + songs.length) % songs.length;
+        loadTrack(currentIndex);
+        audio.play();
+        playBtn.innerText = "⏸";
+    };
 
     // 3. Таймбар и прогресс
     audio.ontimeupdate = () => {
