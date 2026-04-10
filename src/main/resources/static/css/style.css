@@ -1,4 +1,16 @@
 /* Главный контейнер (сетка приложения) */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    background: radial-gradient(circle at 50% -20%, rgba(255,255,255,0.4) 0%, transparent 60%),
+                linear-gradient(135deg, #0051a8 0%, #0072ff 100%) !important;
+    background-attachment: fixed !important;
+    color: white !important;
+    font-family: 'Segoe UI', sans-serif;
+    height: 100vh;
+    overflow: hidden;
+}
+
 .app-container {
     display: grid;
     grid-template-columns: 260px 1fr; /* Сайдбар 260px, остальное — контент */
@@ -133,6 +145,15 @@
     background: rgba(255, 255, 255, 0.25);
     transform: scale(1.05);
     box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+}
+
+.add-to-pl {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    border-radius: 10px;
+    padding: 5px;
+    backdrop-filter: blur(5px);
 }
 
 

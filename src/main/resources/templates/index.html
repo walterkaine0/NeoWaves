@@ -141,24 +141,8 @@
     // Вызываем загрузку первого трека, если они есть
     if (songs.length > 0) { loadTrack(0); }
 
-    window.playSpecific = (i) => {
-    currentIndex = i; // Сохраняем текущий индекс трека
-    loadTrack(i);
-    audio.play();
-    if (playBtn) playBtn.innerText = "⏸";
-};
-    window.togglePlay = function() {
-        if (songs.length === 0) return;
-        if (!audio.src) loadTrack(currentIndex);
 
-        if (audio.paused) {
-            audio.play();
-            playBtn.innerText = "⏸";
-        } else {
-            audio.pause();
-            playBtn.innerText = "▶";
-        }
-    };
+
     window.nextTrack = function() {
         if (songs.length === 0) return;
         currentIndex = (currentIndex + 1) % songs.length;
@@ -229,6 +213,31 @@
             .catch(err => console.error("Ошибка входа:", err));
     };
 
+    window.togglePlay = function() {
+        if (songs.length === 0) return;
+        if (!audio.src) loadTrack(currentIndex);
+
+        if (audio.paused) {
+            audio.play();
+            playBtn.innerText = "⏸";
+        } else {
+            audio.pause();
+            playBtn.innerText = "▶";
+        }
+    };
+
+    window.playSpecific = (i) => {
+        currentIndex = i;
+        if (!songs[i]) return;
+        const s = songs[i];
+        document.getElementById('track-title').innerText = s.title;
+        document.getElementById('artist-name').innerText = s.artist;
+        document.getElementById('mini-cover').style.backgroundImage = `url('${s.coverUrl}')`;
+        audio.src = s.s3Url;
+        audio.play();
+        document.getElementById('play-btn').innerText = "⏸";
+    };
+
     window.handleLogout = () => {
     auth.signOut().then(() => {
         console.log("Вышли из аккаунта");
@@ -266,58 +275,41 @@
         }
     });
 
-});
+    window.handleLike = () => {
+        const u = firebase.auth().currentUser; // Берем юзера напрямую
+        if (!u) return alert("Войдите в аккаунт через Google!");
 
+        if (!songs[currentIndex]) return alert("Сначала выберите трек!");
 
+        console.log("Лайкаем через email:", u.email);
 
-
-   window.handleLike = () => {
-    const user = firebase.auth().currentUser;
-    if (!user) return alert("Войдите в аккаунт через Google!"); // Проверка актуального юзера
-
-    const currentSong = songs[currentIndex];
-    if (!currentSong) return;
-
-    fetch(`/playlist/favorites/add/${currentSong.id}`, { method: 'POST' })
-        .then(r => {
-            if (r.ok) {
+        // Используем твой старый рабочий эндпоинт
+        fetch(`/like/${songs[currentIndex].id}?userEmail=${encodeURIComponent(u.email)}`, { method: 'POST' })
+            .then(r => r.text())
+            .then(m => {
+                alert(m);
+                // Визуально подсвечиваем лайк
                 const heart = document.querySelector('.like-btn') || document.querySelector('button[onclick="handleLike()"]');
                 if (heart) heart.style.color = "#ff4b2b";
-            } else {
-                alert("Ошибка сервера при сохранении лайка");
-            }
-        });
-};
+            })
+            .catch(err => console.error("Ошибка лайка:", err));
+    };
 
     window.handleCreatePlaylist = () => {
-    const user = firebase.auth().currentUser;
-    if (!user) return alert("Войдите в аккаунт!");
+        const u = firebase.auth().currentUser; // Берем юзера напрямую
+        if (!u) return alert("Войдите в аккаунт!");
 
-    const name = prompt("Название плейлиста:");
-    if (name) {
-        // Обязательно передаем email, чтобы бэкенд привязал плейлист к тебе
-        fetch(`/playlist/create?name=${encodeURIComponent(name)}&userEmail=${encodeURIComponent(user.email)}`, { method: 'POST' })
-            .then(r => r.ok ? location.reload() : alert("Ошибка создания"));
-    }
-};
+        const n = prompt("Название плейлиста:");
+        if (n) {
+            fetch(`/playlist/create?name=${encodeURIComponent(n)}&userEmail=${encodeURIComponent(u.email)}`, { method: 'POST' })
+                .then(r => {
+                    if (r.ok) location.reload();
+                    else alert("Ошибка создания на сервере");
+                });
+        }
+    };
 
-    window.handleCreatePlaylist = () => {
-    const user = firebase.auth().currentUser; // Исправлено здесь
-    if(!user) return alert("Войдите в аккаунт!");
-
-    const n = prompt("Название плейлиста:");
-    if(n) {
-        fetch(`/playlist/create?name=${encodeURIComponent(n)}&userEmail=${encodeURIComponent(user.email)}`, {method:'POST'})
-            .then(r => {
-                if(r.ok) location.reload();
-                else alert("Ошибка создания");
-            });
-    }
-};
-
-
-
-    // ФУНКЦИЯ ОТКРЫТИЯ ПЛЕЙЛИСТА
+// ФУНКЦИЯ ОТКРЫТИЯ ПЛЕЙЛИСТА
     window.openPlaylist = (id) => {
     fetch(`/playlist/${id}/songs`)
         .then(r => r.json())
@@ -379,6 +371,17 @@
         })
         .catch(err => alert("Ошибка при удалении"));
 };
+
+
+});
+
+
+
+
+
+
+
+
 
     window.handleLogin = () => console.log("Firebase инициализируется...");
     window.handleLogout = () => {};
