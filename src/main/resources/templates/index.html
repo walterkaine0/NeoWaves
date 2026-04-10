@@ -75,35 +75,36 @@
     <!-- PLAYER BAR -->
     <audio id="main-audio"></audio>
 
-    <footer class="player-bar">
-        <!-- ЛЕВАЯ ЧАСТЬ: ИНФО -->
-        <div class="p-left">
-            <div id="mini-cover" class="p-cover"></div>
-            <div class="p-text">
-                <div id="track-title" class="p-title">Выберите трек</div>
-                <div id="artist-name" class="p-artist">...</div>
+    <footer class="player-bar-new">
+        <!-- Лево: Информация о треке -->
+        <div class="footer-section-left">
+            <div id="mini-cover" class="player-cover-art"></div>
+            <div class="track-details">
+                <div id="track-title" class="track-name-bold">Выберите трек</div>
+                <div id="artist-name" class="artist-name-dim">...</div>
             </div>
         </div>
 
-        <!-- ЦЕНТРАЛЬНАЯ ЧАСТЬ: УПРАВЛЕНИЕ -->
-        <div class="p-center">
-            <div class="p-buttons">
-                <button class="p-nav" onclick="prevTrack()">⏮</button>
-                <button id="play-btn" class="p-play" onclick="togglePlay()">▶</button>
-                <button class="p-nav" onclick="nextTrack()">⏭</button>
+        <!-- Центр: Плеер и Таймбар -->
+        <div class="footer-section-center">
+            <div class="playback-controls-row">
+                <button class="nav-icon-btn" onclick="prevTrack()">⏮</button>
+                <button id="play-btn" class="play-btn-aero" onclick="togglePlay()">▶</button>
+                <button class="nav-icon-btn" onclick="nextTrack()">⏭</button>
             </div>
-            <div class="p-timeline">
-                <span id="current-time">0:00</span>
-                <div class="p-bar-bg" id="progress-container">
-                    <div id="progress-fill"></div>
+
+            <div class="timeline-container">
+                <span id="current-time" class="time-label">0:00</span>
+                <div class="timeline-bg" id="progress-container">
+                    <div id="progress-fill" class="timeline-fill"></div>
                 </div>
-                <span id="total-time">0:00</span>
+                <span id="total-time" class="time-label">0:00</span>
             </div>
         </div>
 
-        <!-- ПРАВАЯ ЧАСТЬ: ДОПЫ -->
-        <div class="p-right">
-            <button class="p-nav" onclick="handleLike()">❤</button>
+        <!-- Право: Громкость/Лайк -->
+        <div class="footer-section-right">
+            <button onclick="handleLike()" class="nav-icon-btn">❤</button>
         </div>
     </footer>
 </div>
@@ -126,16 +127,39 @@
 
     // 2. Инициализация плеера
     const audio = document.getElementById('main-audio');
-    const playBtn = document.getElementById('play-btn');
     const pFill = document.getElementById('progress-fill');
     const pContainer = document.getElementById('progress-container');
 
-    // Функция форматирования времени (0:00)
+    // Форматирование времени
     function formatTime(s) {
         if (!s || isNaN(s)) return "0:00";
         let min = Math.floor(s / 60);
         let sec = Math.floor(s % 60);
         return min + ":" + (sec < 10 ? '0' + sec : sec);
+    }
+
+     // Обновление прогресса
+    audio.ontimeupdate = () => {
+        if (audio.duration) {
+            const pct = (audio.currentTime / audio.duration) * 100;
+            if (pFill) pFill.style.width = pct + '%';
+            const curTime = document.getElementById('current-time');
+            if (curTime) curTime.innerText = formatTime(audio.currentTime);
+        }
+    };
+
+    audio.onloadedmetadata = () => {
+        const totalTime = document.getElementById('total-time');
+        if (totalTime) totalTime.innerText = formatTime(audio.duration);
+    };
+
+    // Перемотка
+    if (pContainer) {
+        pContainer.onclick = (e) => {
+            const width = pContainer.clientWidth;
+            const clickX = e.offsetX;
+            audio.currentTime = (clickX / width) * audio.duration;
+        };
     }
 
     // Загрузка данных трека в интерфейс
