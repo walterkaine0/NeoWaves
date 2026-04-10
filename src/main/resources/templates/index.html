@@ -54,17 +54,19 @@
         <section class="content">
             <div id="content-grid" class="album-grid">
                 <!-- Сюда Thymeleaf рендерит песни при загрузке, а JS — при выборе плейлиста -->
-                <div th:each="song, iter : ${songs}" class="album-card">
+                <div th:each="song, iter : ${songs}" th:if="${song != null}" class="album-card">
                     <div th:onclick="|playSpecific(${iter.index})|">
-                        <img th:src="${song.album != null ? song.album.coverUrl : ''}" alt="Cover">
-                        <h4 th:text="${song.title}"></h4>
-                        <p th:text="${song.album != null && song.album.artist != null ? song.album.artist.name : 'Unknown'}"></p>
+                        <!-- Используем ?. для всех вложенных полей -->
+                        <img th:src="${song.album?.coverUrl ?: '/img/default-cover.png'}" alt="Cover">
+                        <h4 th:text="${song.title ?: 'Название отсутствует'}"></h4>
+                        <p th:text="${song.album?.artist?.name ?: 'Автор неизвестен'}"></p>
                     </div>
 
-                    <!-- Кнопка добавления -->
+                    <!-- Добавление в плейлист -->
                     <select class="add-to-pl" th:onchange="|addToPlaylist(this.value, ${song.id})|">
                         <option value="">+ В плейлист</option>
-                        <option th:each="pl : ${playlists}" th:value="${pl.id}" th:text="${pl.name}"></option>
+                        <option th:each="pl : ${playlists}" th:if="${pl != null}"
+                                th:value="${pl.id}" th:text="${pl.name}"></option>
                     </select>
                 </div>
             </div>
@@ -157,11 +159,11 @@ let songs = [];
 /*[# th:each="s : ${songs}"]*/
     /*[# th:if="${s != null}"]*/ // Добавляем проверку, что объект не null
     songs.push({
-        id: [[${s.id}]],
-        title: [[${s.title}]],
-        s3Url: [[${s.s3Url}]],
-        coverUrl: [[${s.album != null ? s.album.coverUrl : ''}]],
-        artist: [[${s.album != null && s.album.artist != null ? s.album.artist.name : 'Unknown'}]]
+        id: [[${s?.id}]], // Используем ?. для безопасности
+            title: [[${s?.title ?: 'Без названия'}]],
+            s3Url: [[${s?.s3Url ?: ''}]],
+            coverUrl: [[${s?.album?.coverUrl ?: ''}]],
+            artist: [[${s?.album?.artist?.name ?: 'Неизвестен'}]]
     });
     /*[/]*/
 /*[/]*/
