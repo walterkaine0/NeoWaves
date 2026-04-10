@@ -43,11 +43,9 @@
 
     <!-- ОСНОВНОЙ КОНТЕНТ (Сетка песен) -->
     <main class="main-content">
-        <header class="top-bar" style="display: flex; justify-content: flex-end; padding: 20px 0; width: 100%;">
-            <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
-                <button id="login-btn" onclick="handleLogin()" class="btn-frutiger">Войти</button>
-                <span id="user-name" style="color: white; margin-right: 10px;"></span>
-            </div>
+        <header style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+            <button id="login-btn" onclick="handleLogin()" class="btn-frutiger">Войти</button>
+            <span id="user-name" style="color: white; margin-left: 10px;"></span>
         </header>
 
         <section class="content">
@@ -55,10 +53,9 @@
                 <!-- Сюда Thymeleaf рендерит песни при загрузке, а JS — при выборе плейлиста -->
                 <div th:each="song, iter : ${songs}" th:if="${song != null}" class="album-card">
                     <div th:onclick="|playSpecific(${iter.index})|">
-                        <!-- Используем ?. для всех вложенных полей -->
-                        <img th:src="${song.album?.coverUrl ?: '/img/default-cover.png'}" alt="Cover">
-                        <h4 th:text="${song.title ?: 'Название отсутствует'}"></h4>
-                        <p th:text="${song.album?.artist?.name ?: 'Автор неизвестен'}"></p>
+                        <img th:src="${song.album?.coverUrl ?: '/img/default.png'}" alt="Cover">
+                        <h4 th:text="${song.title ?: 'Untitled'}"></h4>
+                        <p th:text="${song.album?.artist?.name ?: 'Unknown'}"></p>
                     </div>
 
                     <!-- Добавление в плейлист -->
@@ -109,54 +106,12 @@
 </footer>
 
 <script>
-    const audio = document.getElementById('main-audio');
-
-    // Функция обновления таймбара
-    if (audio) {
-        audio.ontimeupdate = () => {
-            if (audio.duration) {
-                const pFill = document.getElementById('progress-fill');
-                const curTime = document.getElementById('current-time');
-                const pct = (audio.currentTime / audio.duration) * 100;
-
-                if (pFill) pFill.style.width = pct + '%';
-                if (curTime) curTime.innerText = formatTime(audio.currentTime);
-            }
-        };
-
-        audio.onloadedmetadata = () => {
-            const totalTime = document.getElementById('total-time');
-            if (totalTime) totalTime.innerText = formatTime(audio.duration);
-        };
-    }
-
-    // Перемотка
-    const pContainer = document.getElementById('progress-container');
-    if (pContainer) {
-        pContainer.onclick = (e) => {
-            const width = pContainer.clientWidth;
-            const clickX = e.offsetX;
-            audio.currentTime = (clickX / width) * audio.duration;
-        };
-    }
-
-    function formatTime(s) {
-        let min = Math.floor(s / 60);
-        let sec = Math.floor(s % 60);
-        return min + ":" + (sec < 10 ? '0' + sec : sec);
-    }
-
-
-
-
-
-
-
 
 // --- 2. Массив песен (Thymeleaf) ---
+// 1. Формируем массив песен из Spring Model
 let songs = [];
 /*[# th:each="s : ${songs}"]*/
-    /*[# th:if="${s != null}"]*/
+    /*[# th:if="${s != null}"]*/ // Проверка, что песня существует
     songs.push({
         id: [[${s?.id}]],
         title: [[${s?.title ?: 'Без названия'}]],
@@ -167,25 +122,53 @@ let songs = [];
     /*[/]*/
 /*[/]*/
 
-//функции управления
- let currentIndex = 0;
+    let currentIndex = 0;
     const audio = document.getElementById('main-audio');
     const playBtn = document.getElementById('play-btn');
 
+    // 2. Функции плеера
     function loadTrack(index) {
         if (!songs[index]) return;
-        document.getElementById('track-title').innerText = songs[index].title;
-        document.getElementById('artist-name').innerText = songs[index].artist;
-        document.getElementById('mini-cover').style.backgroundImage = `url('${songs[index].coverUrl}')`;
-        audio.src = songs[index].s3Url;
+        const s = songs[index];
+        document.getElementById('track-title').innerText = s.title;
+        document.getElementById('artist-name').innerText = s.artist;
+        document.getElementById('mini-cover').style.backgroundImage = `url('${s.coverUrl}')`;
+        audio.src = s.s3Url;
     }
 
     window.playSpecific = (i) => { currentIndex = i; loadTrack(i); audio.play(); playBtn.innerText = "⏸"; };
-    window.togglePlay = () => { if(audio.paused){audio.play(); playBtn.innerText="⏸";}else{audio.pause(); playBtn.innerText="▶";} };
+    window.togglePlay = () => {
+        if (!audio.src && songs.length > 0) loadTrack(currentIndex);
+        if(audio.paused){ audio.play(); playBtn.innerText="⏸"; }
+        else { audio.pause(); playBtn.innerText="▶"; }
+    };
     window.nextTrack = () => { currentIndex = (currentIndex + 1) % songs.length; playSpecific(currentIndex); };
     window.prevTrack = () => { currentIndex = (currentIndex - 1 + songs.length) % songs.length; playSpecific(currentIndex); };
 
+    // 3. Таймбар и прогресс
+    audio.ontimeupdate = () => {
+        if (audio.duration) {
+            const pct = (audio.currentTime / audio.duration) * 100;
+            document.getElementById('progress-fill').style.width = pct + '%';
+            document.getElementById('current-time').innerText = formatTime(audio.currentTime);
+        }
+    };
 
+    document.getElementById('progress-container').onclick = (e) => {
+        const width = e.currentTarget.clientWidth;
+        const clickX = e.offsetX;
+        audio.currentTime = (clickX / width) * audio.duration;
+    };
+
+    function formatTime(s) {
+        let min = Math.floor(s / 60);
+        let sec = Math.floor(s % 60);
+        return min + ":" + (sec < 10 ? '0' + sec : sec);
+    }
+
+    // 4. Заглушки для функций плейлиста (чтобы консоль не ругалась)
+    window.openPlaylist = (id) => { console.log("Open playlist", id); };
+    window.handleDeletePlaylist = (id) => { console.log("Delete playlist", id); };
 // --- 4. Восстановление Firebase функций ---
     const firebaseConfig = {
         apiKey: "AIzaSyDJhWJDrW-rN2a3zFp_hAL5EWFn5UT9B28",
