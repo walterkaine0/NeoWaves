@@ -44,6 +44,7 @@
 .album-card:hover {
     background: rgba(255, 255, 255, 0.15);
     transform: translateY(-5px);
+    box-shadow: 0 0 20px rgba(0, 255, 242, 0.2);
 }
 
 .album-card img {
