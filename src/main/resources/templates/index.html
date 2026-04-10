@@ -15,6 +15,46 @@
     <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
 </head>
 <body>
+<div class="app-container" style="display: grid; grid-template-columns: 260px 1fr; height: calc(100vh - 90px); overflow: hidden;">
+
+    <!-- САЙДБАР -->
+    <aside style="background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px); border-right: 1px solid rgba(255, 255, 255, 0.1); padding: 20px; display: flex; flex-direction: column; gap: 20px;">
+        <div style="font-size: 24px; font-weight: 900; font-style: italic; color: white; text-shadow: 0 0 10px rgba(255,255,255,0.3);">NeoWaves</div>
+
+        <nav style="display: flex; flex-direction: column; gap: 10px;">
+            <div class="nav-item" onclick="location.reload()" style="padding: 10px; border-radius: 10px; cursor: pointer; color: white; transition: 0.3s; background: rgba(255,255,255,0.1);">🏠 Главная</div>
+            <div class="nav-item" style="padding: 10px; border-radius: 10px; cursor: pointer; color: white; opacity: 0.7;">🔍 Поиск</div>
+        </nav>
+
+        <div style="margin-top: 20px;">
+            <p style="font-size: 11px; color: rgba(255,255,255,0.5); font-weight: bold; letter-spacing: 1px;">ПЛЕЙЛИСТЫ</p>
+            <div id="playlists-list" style="display: flex; flex-direction: column; gap: 5px; margin-top: 10px;">
+                <!-- Сюда Thymeleaf или JS подтянет плейлисты -->
+                <div th:each="pl : ${playlists}" class="playlist-link" th:onclick="|openPlaylist(${pl.id})|"
+                     style="padding: 8px 10px; border-radius: 8px; color: white; cursor: pointer; transition: 0.2s;">
+                    💿 <span th:text="${pl.name}">Плейлист</span>
+                </div>
+            </div>
+            <button onclick="handleCreatePlaylist()" style="width: 100%; margin-top: 15px; padding: 10px; border-radius: 20px; border: none; background: white; color: #0072ff; font-weight: bold; cursor: pointer;">+ Создать</button>
+        </div>
+    </aside>
+
+    <!-- ОСНОВНОЙ КОНТЕНТ (Сетка песен) -->
+    <main style="overflow-y: auto; padding: 30px;">
+        <div id="content-grid" class="album-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px;">
+            <!-- Карточки песен -->
+        </div>
+    </main>
+</div>
+
+<header style="display: flex; justify-content: flex-end; padding: 10px 30px;">
+    <div id="auth-ui" style="display: flex; align-items: center; gap: 15px;">
+        <span id="user-name" style="color: white; font-size: 14px;"></span>
+        <button id="login-btn" onclick="handleLogin()" style="padding: 8px 20px; border-radius: 20px; border: 1px solid white; background: rgba(255,255,255,0.1); color: white; cursor: pointer; backdrop-filter: blur(10px);">Войти</button>
+        <button id="logout-btn" onclick="handleLogout()" style="display:none; color: white; background: none; border: none; cursor: pointer; opacity: 0.7;">Выйти</button>
+    </div>
+</header>
+
 <audio id="main-audio"></audio>
 <footer class="music-player" style="position: fixed; bottom: 0; left: 0; width: 100%; height: 90px; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(25px); border-top: 1px solid rgba(255, 255, 255, 0.3); display: flex; justify-content: space-between; align-items: center; padding: 0 30px; box-sizing: border-box; z-index: 9999; color: white;">
 
@@ -86,6 +126,55 @@
         let sec = Math.floor(s % 60);
         return min + ":" + (sec < 10 ? '0' + sec : sec);
     }
+
+
+
+
+
+
+    // Конфиг Firebase (возьми из своего старого файла)
+const firebaseConfig = { apiKey: "AIzaSyDJhWJDrW-rN2a3zFp_hAL5EWFn5UT9B28",
+        authDomain: "neowaves-824c3.firebaseapp.com",
+        projectId: "neowaves-824c3",
+        storageBucket: "neowaves-824c3.firebasestorage.app",
+        messagingSenderId: "398266414799",
+        appId: "1:398266414799:web:f58c71fe879b531f8b29ba" };
+firebase.initializeApp(firebaseConfig);
+
+function handleLogin() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    firebase.auth().signInWithPopup(provider).then(result => {
+        location.reload(); // Перезагружаем для обновления данных от Spring
+    });
+}
+
+firebase.auth().onAuthStateChanged(user => {
+    if (user) {
+        document.getElementById('user-name').innerText = user.displayName;
+        document.getElementById('login-btn').style.display = 'none';
+        document.getElementById('logout-btn').style.display = 'block';
+    }
+});
+
+// Открытие плейлиста (перерисовка сетки)
+window.openPlaylist = (id) => {
+    fetch(`/playlist/${id}/songs`)
+        .then(r => r.json())
+        .then(data => {
+            const grid = document.getElementById('content-grid');
+            grid.innerHTML = '';
+            data.forEach((s, index) => {
+                grid.innerHTML += `
+                    <div class="album-card" onclick="playSpecific(${index})" style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; cursor: pointer; transition: 0.3s;">
+                        <img src="${s.album.coverUrl}" style="width: 100%; border-radius: 10px; margin-bottom: 10px;">
+                        <div style="font-weight: bold;">${s.title}</div>
+                        <div style="font-size: 12px; opacity: 0.6;">${s.album.artist.name}</div>
+                    </div>
+                `;
+            });
+        });
+};
+
 </script>
 
 
