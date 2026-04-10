@@ -10,8 +10,9 @@
 
 
     <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
 </head>
 <body>
 <div class="app-container" style="display: grid; grid-template-columns: 260px 1fr; height: calc(100vh - 90px); overflow: hidden;">
@@ -203,69 +204,101 @@
 
 
 // --- 4. Восстановление Firebase функций ---
+    document.addEventListener("DOMContentLoaded", () => {
+
     const firebaseConfig = {
         apiKey: "AIzaSyDJhWJDrW-rN2a3zFp_hAL5EWFn5UT9B28",
         authDomain: "neowaves-824c3.firebaseapp.com",
         projectId: "neowaves-824c3",
         storageBucket: "neowaves-824c3.firebasestorage.app",
         messagingSenderId: "398266414799",
-        appId: "1:398266414799:web:f58c71fe879b531f8b29ba"
+        appId: "1:398266414799:web:f58c71fe879b531f8b29ba",
+        measurementId: "G-YS6MJR4KBX"
     };
 
-    firebase.initializeApp(firebaseConfig);
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
     const auth = firebase.auth();
 
-    // Функция входа
-window.handleLogin = () => {
-    firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
-        .then(() => {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            return firebase.auth().signInWithPopup(provider);
-        })
-        .then(result => {
-            console.log("LOGIN OK", result.user);
-        })
-        .catch(err => console.error("Ошибка входа:", err));
-};
+        // 1. Функция входа
+    window.handleLogin = () => {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        auth.signInWithPopup(provider)
+            .then(result => console.log("LOGIN OK", result.user))
+            .catch(err => console.error("Ошибка входа:", err));
+    };
 
-    // Функция выхода
     window.handleLogout = () => {
-    firebase.auth().signOut().then(() => {
-        console.log("Вышли из Firebase");
-        // Обязательно уведомляем сервер, чтобы он стер сессию
-        fetch('/logout', { method: 'POST' }).then(() => location.reload());
-    });
+    auth.signOut().then(() => {
+        console.log("Вышли из аккаунта");
+        location.reload();
+    }).catch(err => console.error("Ошибка при выходе:", err));
 };
 
-    window.handleLike = () => {
+    // Правильный вызов без скобок после auth
+    auth.onAuthStateChanged(user => {
+        const loginBtn = document.getElementById('login-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const userName = document.getElementById('user-name');
+
+        if (user) {
+            console.log("Пользователь вошел:", user.email);
+            // Используем setProperty, чтобы перебить инлайновые стили из HTML
+            if (loginBtn) loginBtn.style.setProperty('display', 'none', 'important');
+            if (logoutBtn) logoutBtn.style.setProperty('display', 'block', 'important');
+            if (userName) userName.innerText = user.displayName || user.email;
+
+            user.getIdToken(true).then(idToken => {
+            fetch('/api/auth/sync', { // Убедись, что в Java этот путь разрешен
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: idToken })
+            }).then(res => {
+                console.log("Сервер подтвердил сессию:", res.ok);
+            });
+        });
+        } else {
+            console.log("Пользователь не авторизован");
+            if (loginBtn) loginBtn.style.setProperty('display', 'block', 'important');
+            if (logoutBtn) logoutBtn.style.setProperty('display', 'none', 'important');
+            if (userName) userName.innerText = '';
+        }
+    });
+
+});
+
+
+
+
+   window.handleLike = () => {
+    const user = firebase.auth().currentUser;
+    if (!user) return alert("Войдите в аккаунт через Google!"); // Проверка актуального юзера
+
     const currentSong = songs[currentIndex];
-    if (!currentSong) return alert("Сначала включи музыку!");
+    if (!currentSong) return;
 
     fetch(`/playlist/favorites/add/${currentSong.id}`, { method: 'POST' })
         .then(r => {
             if (r.ok) {
-                // Ищем кнопку лайка по иконке или классу
                 const heart = document.querySelector('.like-btn') || document.querySelector('button[onclick="handleLike()"]');
-                if (heart) {
-                    heart.style.color = "#ff4b2b";
-                    heart.style.filter = "drop-shadow(0 0 8px #ff4b2b)";
-                }
+                if (heart) heart.style.color = "#ff4b2b";
             } else {
-                alert("Ошибка! Сервер не подтвердил лайк. Проверь логин.");
+                alert("Ошибка сервера при сохранении лайка");
             }
         });
 };
 
-    window.addToPlaylist = (playlistId, songId) => {
-    if (!playlistId) return;
+    window.handleCreatePlaylist = () => {
+    const user = firebase.auth().currentUser;
+    if (!user) return alert("Войдите в аккаунт!");
 
-    fetch(`/playlist/${playlistId}/add/${songId}`, { method: 'POST' })
-        .then(r => r.text())
-        .then(message => {
-            alert(message);
-            // Сбрасываем селект в исходное состояние
-            location.reload();
-        });
+    const name = prompt("Название плейлиста:");
+    if (name) {
+        // Обязательно передаем email, чтобы бэкенд привязал плейлист к тебе
+        fetch(`/playlist/create?name=${encodeURIComponent(name)}&userEmail=${encodeURIComponent(user.email)}`, { method: 'POST' })
+            .then(r => r.ok ? location.reload() : alert("Ошибка создания"));
+    }
 };
 
     window.handleCreatePlaylist = () => {
@@ -282,33 +315,6 @@ window.handleLogin = () => {
     }
 };
 
-    // Следим за состоянием входа
-    firebase.auth().onAuthStateChanged(user => {
-    const loginBtn = document.getElementById('login-btn');
-    const logoutBtn = document.getElementById('logout-btn');
-    const userName = document.getElementById('user-name');
-
-    if (user) {
-        console.log("Юзер авторизован:", user.email);
-        if (loginBtn) loginBtn.style.display = 'none';
-        if (logoutBtn) logoutBtn.style.display = 'block';
-        if (userName) userName.innerText = user.displayName || user.email;
-
-        // ЕДИНАЯ точка отправки токена на сервер
-        user.getIdToken().then(idToken => {
-            fetch('/auth/login', { // Убедись, что в Java этот же путь!
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token: idToken })
-            });
-        });
-    } else {
-        console.log("Юзер не авторизован");
-        if (loginBtn) loginBtn.style.display = 'block';
-        if (logoutBtn) logoutBtn.style.display = 'none';
-        if (userName) userName.innerText = '';
-    }
-});
 
 
     // ФУНКЦИЯ ОТКРЫТИЯ ПЛЕЙЛИСТА
