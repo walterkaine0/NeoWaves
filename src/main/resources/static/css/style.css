@@ -62,8 +62,9 @@
 
 .album-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 30px;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 25px;
+    padding-bottom: 40px; /* Отступ снизу, чтобы последний ряд не перекрывал плеер */
 }
 
 .album-card {
@@ -78,5 +79,13 @@
     width: 100%;
     border-radius: 18px;
     box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+}
+
+.main-content {
+    margin-left: 260px; /* Должно быть равно ширине сайдбара */
+    padding: 40px;
+    width: calc(100% - 260px);
+    height: calc(100vh - 90px); /* Чтобы не залезало под плеер */
+    overflow-y: auto;
 }
 

@@ -43,11 +43,17 @@
 
     <!-- ОСНОВНОЙ КОНТЕНТ (Сетка песен) -->
     <main class="main-content">
-        <header class="top-bar">
-            <div class="auth-section" style="display: flex; justify-content: flex-end; width: 100%;">
-                <span id="user-name" style="color: white; margin-right: 15px; font-weight: bold;"></span>
-                <button id="login-btn" class="btn-frutiger" onclick="handleLogin()">Войти</button>
-                <button id="logout-btn" class="btn-frutiger" onclick="handleLogout()" style="display:none;">Выйти</button>
+        <header class="top-bar" style="display: flex; justify-content: flex-end; padding: 20px 0; width: 100%;">
+            <div id="auth-section" class="flex items-center gap-4">
+                <span id="user-name" class="text-white font-bold mr-4"></span>
+                <button id="login-btn" onclick="handleLogin()"
+                        style="background: rgba(255,255,255,0.1); border: 1px solid white; color: white; padding: 8px 24px; border-radius: 20px; backdrop-filter: blur(10px); cursor: pointer;">
+                    Войти
+                </button>
+                <button id="logout-btn" onclick="handleLogout()"
+                        style="display: none; background: none; border: none; color: white; opacity: 0.7; cursor: pointer;">
+                    Выйти
+                </button>
             </div>
         </header>
 
@@ -157,13 +163,13 @@
 // --- 2. Массив песен (Thymeleaf) ---
 let songs = [];
 /*[# th:each="s : ${songs}"]*/
-    /*[# th:if="${s != null}"]*/ // Добавляем проверку, что объект не null
+    /*[# th:if="${s != null}"]*/
     songs.push({
-        id: [[${s?.id}]], // Используем ?. для безопасности
-            title: [[${s?.title ?: 'Без названия'}]],
-            s3Url: [[${s?.s3Url ?: ''}]],
-            coverUrl: [[${s?.album?.coverUrl ?: ''}]],
-            artist: [[${s?.album?.artist?.name ?: 'Неизвестен'}]]
+        id: [[${s?.id}]],
+        title: [[${s?.title ?: 'Без названия'}]],
+        s3Url: [[${s?.s3Url ?: ''}]],
+        coverUrl: [[${s?.album?.coverUrl ?: ''}]],
+        artist: [[${s?.album?.artist?.name ?: 'Неизвестен'}]]
     });
     /*[/]*/
 /*[/]*/
