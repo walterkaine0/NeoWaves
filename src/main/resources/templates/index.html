@@ -7,53 +7,52 @@
     <script src="https://tailwindcss.com"></script>
 
     <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link href="https://jsdelivr.net" rel="stylesheet">
+
 
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
 </head>
 <body>
-<footer class="fixed bottom-0 left-0 w-full h-24 bg-black/40 backdrop-blur-xl border-t border-white/10 px-6 flex items-center justify-between z-50">
+<audio id="main-audio"></audio>
 
-    <!-- 1. ЛЕВО: Информация о треке -->
-    <div class="flex items-center w-1/4">
-        <div id="mini-cover" class="w-14 h-14 bg-gray-800 rounded-lg shadow-2xl bg-cover bg-center"></div>
-        <div class="ml-4">
-            <div id="track-title" class="text-white text-sm font-bold truncate w-40">Выберите трек</div>
-            <div id="artist-name" class="text-gray-400 text-xs mt-1">...</div>
-        </div>
-    </div>
+<footer class="player-wrapper-aero fixed-bottom border-top border-white border-opacity-25">
+    <div class="container-fluid h-100">
+        <div class="row h-100 align-items-center px-4">
 
-    <!-- 2. ЦЕНТР: Управление и прогресс -->
-    <div class="flex flex-col items-center w-2/4 max-w-2xl">
-        <!-- Кнопки -->
-        <div class="flex items-center gap-6 mb-2">
-            <button onclick="prevTrack()" class="text-gray-400 hover:text-white transition"><i class="fas fa-step-backward text-xl"></i>⏮</button>
-            <button id="play-btn" onclick="togglePlay()" class="w-10 h-10 bg-white rounded-full flex items-center justify-center hover:scale-105 transition shadow-lg text-black">
-                ▶
-            </button>
-            <button onclick="nextTrack()" class="text-gray-400 hover:text-white transition"><i class="fas fa-step-forward text-xl"></i>⏭</button>
-        </div>
-        <!-- Полоска прогресса (Spotify Style) -->
-        <div class="flex items-center w-full gap-3 text-[10px] text-gray-400">
-            <span id="current-time">0:00</span>
-            <div id="progress-container" class="group relative flex-grow h-1 bg-white/20 rounded-full cursor-pointer">
-                <div id="progress-fill" class="h-full bg-[#1db954] rounded-full w-0 group-hover:bg-[#1ed760] transition-all"></div>
-                <!-- Ползунок при наведении -->
-                <div class="absolute top-1/2 -translate-y-1/2 right-0 w-3 h-3 bg-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <!-- ЛЕВО: Трек -->
+            <div class="col-3 d-flex align-items-center">
+                <div id="mini-cover" class="rounded-3 shadow-sm bg-secondary" style="width: 56px; height: 56px; background-size: cover;"></div>
+                <div class="ms-3 overflow-hidden">
+                    <div id="track-title" class="fw-bold text-white text-truncate" style="font-size: 14px;">Выберите трек</div>
+                    <div id="artist-name" class="text-white-50 small text-truncate">...</div>
+                </div>
             </div>
-            <span id="total-time">0:00</span>
-        </div>
-    </div>
 
-    <!-- 3. ПРАВО: Дополнительные действия -->
-    <div class="flex items-center justify-end w-1/4 gap-4">
-        <button onclick="handleLike()" class="text-gray-400 hover:text-red-500 transition">❤</button>
-        <div class="flex items-center gap-2 w-32">
-            <span class="text-gray-400">🔈</span>
-            <div class="h-1 bg-white/20 rounded-full flex-grow cursor-pointer">
-                <div class="h-full bg-white rounded-full w-1/2"></div>
+            <!-- ЦЕНТР: Плеер -->
+            <div class="col-6 d-flex flex-column align-items-center">
+                <div class="d-flex align-items-center gap-4 mb-2">
+                    <button class="btn btn-link text-white p-0 fs-4 text-decoration-none" onclick="prevTrack()">⏮</button>
+                    <button id="play-btn" class="btn-play-aero" onclick="togglePlay()">▶</button>
+                    <button class="btn btn-link text-white p-0 fs-4 text-decoration-none" onclick="nextTrack()">⏭</button>
+                </div>
+
+                <div class="d-flex align-items-center w-100 gap-2">
+                    <span id="current-time" class="text-white-50" style="font-size: 11px; min-width: 35px;">0:00</span>
+                    <div id="progress-container" class="progress-container-custom flex-grow-1">
+                        <div id="progress-fill" class="progress-fill-custom"></div>
+                    </div>
+                    <span id="total-time" class="text-white-50" style="font-size: 11px; min-width: 35px;">0:00</span>
+                </div>
             </div>
+
+            <!-- ПРАВО: Громкость -->
+            <div class="col-3 d-flex justify-content-end align-items-center gap-3">
+                <button class="btn btn-link text-white p-0 fs-4 text-decoration-none" onclick="handleLike()">❤</button>
+                <input type="range" class="form-range d-none d-md-block" style="width: 100px; accent-color: #00fff2;">
+            </div>
+
         </div>
     </div>
 </footer>
