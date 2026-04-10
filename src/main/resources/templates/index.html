@@ -42,9 +42,15 @@
 
     <!-- ОСНОВНОЙ КОНТЕНТ (Сетка песен) -->
     <main class="main-content">
-        <header style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
-            <button id="login-btn" onclick="handleLogin()" class="btn-frutiger">Войти</button>
-            <span id="user-name" style="color: white; margin-left: 10px;"></span>
+        <header style="display: flex; justify-content: flex-end; align-items: center; width: 100%; margin-bottom: 20px;">
+            <div id="auth-section" style="display: flex; align-items: center; gap: 15px;">
+                <span id="user-name" style="color: white; font-weight: bold;"></span>
+                <button id="login-btn" onclick="handleLogin()"
+                        style="background: rgba(255,255,255,0.1); border: 1px solid white; color: white; padding: 8px 20px; border-radius: 20px; cursor: pointer;">
+                    Войти
+                </button>
+                <button id="logout-btn" onclick="handleLogout()" style="display:none; color: white; background: none; border: none; cursor: pointer;">Выйти</button>
+            </div>
         </header>
 
         <section class="content">
