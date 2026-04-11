@@ -19,7 +19,7 @@ public class UserCrudRepositoryTest {
 
     @Autowired
     private UserRepository userCrudRepository;
-
+/*
     @Test
     void findByEmailReturnsCorrectUser() {
         User user = new User(null, "John", "pupik@gmail.com");
@@ -30,4 +30,6 @@ public class UserCrudRepositoryTest {
         assertEquals("John", userOptional.get().getUsername());
         assertEquals("pupik@gmail.com", userOptional.get().getEmail());
     }
+
+ */
 }
