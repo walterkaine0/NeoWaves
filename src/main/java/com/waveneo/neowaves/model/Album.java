@@ -23,8 +23,8 @@ public class Album {
     private Artist artist;
 
     @OneToMany(mappedBy = "album")
-    @JsonIgnore // Чтобы не тянуть песни обратно при сериализации
-    @ToString.Exclude // Чтобы Lombok не зациклился
+    @JsonIgnore
+    @ToString.Exclude
     private List<Song> songs;
 }
 

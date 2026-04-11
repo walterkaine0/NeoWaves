@@ -9,13 +9,13 @@ import java.util.List;
 @Getter
 @Setter
 @Entity
-@Table(name = "users") // Переименовываем таблицу, чтобы избежать конфликта с системным словом USER
+@Table(name = "users")
 @Data
 @NoArgsConstructor
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id") // Явно указываем имя колонки
+    @Column(name = "id")
     private Long id;
 
     @Column(name = "email", unique = true)

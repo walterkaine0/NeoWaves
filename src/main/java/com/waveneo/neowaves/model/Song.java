@@ -25,7 +25,6 @@ public class Song {
     @ToString.Exclude
     private Album album;
 
-    // ДОБАВЛЕНО: Связь с плейлистами и защита от рекурсии в JSON
     @ManyToMany(mappedBy = "songs")
     @JsonBackReference
     @ToString.Exclude

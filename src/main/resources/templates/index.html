@@ -8,8 +8,6 @@
 
     <link rel="stylesheet" th:href="@{/css/style.css}">
 
-
-    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
@@ -17,9 +15,8 @@
 <body>
 <div class="app-container" style="display: grid; grid-template-columns: 260px 1fr; height: calc(100vh - 90px); overflow: hidden;">
 
-    <!-- САЙДБАР -->
     <aside class="sidebar" style="background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(20px); border-right: 1px solid rgba(255, 255, 255, 0.1); width: 260px; height: 100vh; padding: 20px; display: flex; flex-direction: column;">
-        <div style="font-size: 24px; font-weight: 900; font-style: italic; margin-bottom: 30px;">NeoWaves</div>
+        <div style="font-size: 24px; font-weight: 900; font-style: italic; margin-bottom: 30px;">Waves</div>
 
         <nav style="display: flex; flex-direction: column; gap: 10px;">
             <div class="menu-item active" onclick="location.reload()" style="padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.1); cursor: pointer;">🏠 Главная</div>
@@ -29,7 +26,6 @@
         <div style="margin-top: 30px;">
             <p style="font-size: 11px; opacity: 0.5; font-weight: bold; margin-bottom: 15px; letter-spacing: 1px;">ПЛЕЙЛИСТЫ</p>
             <div id="playlists-container" style="display: flex; flex-direction: column; gap: 8px;">
-                <!-- Твоя рабочая логика из nonstab -->
                 <div th:each="pl : ${playlists}" class="playlist-item"
                      th:onclick="|openPlaylist(${pl.id})|"
                      style="padding: 8px 12px; border-radius: 10px; background: rgba(255,255,255,0.05); cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: 0.3s;">
@@ -40,8 +36,6 @@
             <button onclick="handleCreatePlaylist()" style="width: 100%; margin-top: 15px; padding: 10px; border-radius: 20px; border: none; background: white; color: #0072ff; font-weight: bold; cursor: pointer;">+ Создать</button>
         </div>
     </aside>
-
-    <!-- ОСНОВНОЙ КОНТЕНТ (Сетка песен) -->
     <main class="main-content">
         <header style="width: 100%; display: flex; justify-content: flex-end; padding: 20px 40px; box-sizing: border-box;">
             <div id="auth-section" style="display: flex; align-items: center; gap: 15px;">
@@ -53,15 +47,12 @@
 
         <section class="content">
             <div id="content-grid" class="album-grid">
-                <!-- Сюда Thymeleaf рендерит песни при загрузке, а JS — при выборе плейлиста -->
                 <div th:each="song, iter : ${songs}" th:if="${song != null}" class="album-card">
                     <div th:onclick="|playSpecific(${iter.index})|">
                         <img th:src="${song.album?.coverUrl ?: '/img/default.png'}" alt="Cover">
                         <h4 th:text="${song.title ?: 'Untitled'}"></h4>
                         <p th:text="${song.album?.artist?.name ?: 'Unknown'}"></p>
                     </div>
-
-                    <!-- Добавление в плейлист -->
                     <select class="add-to-pl" th:onchange="|addToPlaylist(this.value, ${song.id})|">
                         <option value="">+ В плейлист</option>
                         <option th:each="pl : ${playlists}" th:if="${pl != null}"
@@ -86,7 +77,6 @@
         </div>
     </div>
 
-    <!-- Центр: Управление -->
     <div style="width: 50%; display: flex; flex-direction: column; align-items: center; gap: 10px;">
         <div style="display: flex; align-items: center; gap: 30px;">
             <button onclick="prevTrack()" style="background: none; border: none; color: white; cursor: pointer; font-size: 20px;">⏮</button>
@@ -102,16 +92,12 @@
         </div>
     </div>
 
-    <!-- Право: Лайк -->
     <div style="width: 25%; display: flex; justify-content: flex-end;">
         <button class="like-btn" onclick="handleLike()">❤</button>
     </div>
 </footer>
 
 <script th:inline="javascript">
-
-// --- 2. Массив песен (Thymeleaf) ---
-// 1. Формируем массив песен из Spring Model
     let songs = [];
     /*[# th:each="s : ${songs}"]*/
         /*[# th:if="${s != null}"]*/
@@ -128,7 +114,6 @@
     const audio = document.getElementById('main-audio');
     const playBtn = document.getElementById('play-btn');
 
-    // 2. Функции плеера
     function loadTrack(index) {
     if (songs.length === 0) return;
     const s = songs[index];
@@ -136,7 +121,6 @@
     document.getElementById('artist-name').innerText = s.artist;
     document.getElementById('mini-cover').style.backgroundImage = `url('${s.coverUrl}')`;
 
-    // СБРОС ЛАЙКА: при загрузке новой песни всегда делаем сердечко белым
     const heartBtn = document.querySelector('.like-btn');
     if (heartBtn) {
         heartBtn.classList.remove('liked');
@@ -145,10 +129,7 @@
     audio.src = s.s3Url;
 }
 
-    // Вызываем загрузку первого трека, если они есть
     if (songs.length > 0) { loadTrack(0); }
-
-
 
     window.nextTrack = function() {
         if (songs.length === 0) return;
@@ -166,9 +147,6 @@
         playBtn.innerText = "⏸";
     };
 
-
-
-    // 3. Таймбар и прогресс
     audio.ontimeupdate = () => {
         if (audio.duration) {
             const pct = (audio.currentTime / audio.duration) * 100;
@@ -189,12 +167,12 @@
         return min + ":" + (sec < 10 ? '0' + sec : sec);
     }
 
-    // 4. Заглушки для функций плейлиста (чтобы консоль не ругалась)
+
     window.openPlaylist = (id) => { console.log("Open playlist", id); };
     window.handleDeletePlaylist = (id) => { console.log("Delete playlist", id); };
 
 
-// --- 4. Восстановление Firebase функций ---
+
     document.addEventListener("DOMContentLoaded", () => {
 
     const firebaseConfig = {
@@ -212,7 +190,6 @@
     }
     const auth = firebase.auth();
 
-        // 1. Функция входа
     window.handleLogin = () => {
         const provider = new firebase.auth.GoogleAuthProvider();
         auth.signInWithPopup(provider)
@@ -245,7 +222,6 @@
     }).catch(err => console.error("Ошибка при выходе:", err));
 };
 
-    // Правильный вызов без скобок после auth
     auth.onAuthStateChanged(user => {
         const loginBtn = document.getElementById('login-btn');
         const logoutBtn = document.getElementById('logout-btn');
@@ -259,7 +235,7 @@
             if (userName) userName.innerText = user.displayName || user.email;
 
             user.getIdToken(true).then(idToken => {
-            fetch('/api/auth/sync', { // Убедись, что в Java этот путь разрешен
+            fetch('/api/auth/sync', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ token: idToken })
@@ -277,9 +253,9 @@
 
     window.handleLike = () => {
     const u = firebase.auth().currentUser;
-    if (!u) return alert("Войдите в аккаунт!");
+    if (!u) return alert("Войдите в аккаунт");
     const s = songs[currentIndex];
-    if (!s) return alert("Сначала выберите трек!");
+    if (!s) return alert("Сначала выберите трек");
 
     const heartBtn = document.querySelector('.like-btn');
 
@@ -290,14 +266,9 @@
         .then(r => r.text())
         .then(message => {
             console.log("Ответ сервера:", message);
-
-            // Переключаем класс: если был 'liked' — удалит, если не было — добавит
             heartBtn.classList.toggle('liked');
-
-            // Опционально: выводим сообщение только если нужно
-            // alert(message);
         })
-        .catch(err => console.error("Ошибка при переключении лайка:", err));
+        .catch(err => console.error("Ошика при переключении лайка:", err));
 };
 
     window.addToPlaylist = (playlistId, songId) => {
@@ -311,7 +282,7 @@
     window.handleCreatePlaylist = () => {
         const n = prompt("Название плейлиста:");
         if (n) fetch(`/playlist/create?name=${encodeURIComponent(n)}&userEmail=${auth.currentUser.email}`, { method: 'POST' })
-            .then(r => r.ok ? location.reload() : alert("Ошибка"));
+            .then(r => r.ok ? location.reload() : alert("oшибка"));
     };
 
     window.openPlaylist = (id) => {
@@ -319,8 +290,6 @@
         .then(r => r.json())
         .then(data => {
             if (data.length === 0) return alert("Плейлист пуст");
-
-            // 1. Обновляем глобальный список песен для плеера
             songs = data.map(s => ({
                 id: s.id,
                 title: s.title,
@@ -329,15 +298,12 @@
                 artist: s.album?.artist?.name || 'Unknown'
             }));
 
-            // 2. Очищаем сетку в центре экрана
             const grid = document.getElementById('content-grid');
             grid.innerHTML = '';
 
-            // 3. Рисуем новые карточки
             songs.forEach((s, index) => {
                 const card = document.createElement('div');
                 card.className = 'album-card';
-                // Копируем стили из твоего Thymeleaf-шаблона
                 card.style = "background: rgba(255, 255, 255, 0.05); border-radius: 20px; padding: 15px; transition: 0.3s; cursor: pointer;";
 
                 card.innerHTML = `
@@ -370,7 +336,7 @@
 
     fetch(`/playlist/delete/${id}`, { method: 'POST' })
         .then(r => {
-            if (r.ok) location.reload(); // Перезагружаем, чтобы обновить сайдбар
+            if (r.ok) location.reload();
             else alert("Ошибка при удалении");
         });
 };
@@ -381,12 +347,10 @@
         .then(r => r.text())
         .then(msg => {
             console.log(msg);
-            openPlaylist(playlistId); // Обновляем вид плейлиста
+            openPlaylist(playlistId);
         })
         .catch(err => alert("Ошибка при удалении"));
 };
-
-
     window.handleLogin = () => console.log("Firebase инициализируется...");
     window.handleLogout = () => {};
     window.handleLike = () => alert("Войдите в аккаунт");

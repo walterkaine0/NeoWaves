@@ -29,7 +29,6 @@ public class SongController {
         model.addAttribute("songs", songRepository.findAll());
 
         if (userEmail != null && !userEmail.isEmpty()) {
-            // Показываем плейлисты только конкретного юзера
             User user = userRepository.findByEmail(userEmail).orElse(null);
             if (user != null) {
                 model.addAttribute("playlists", playlistRepository.findAll().stream()
@@ -39,13 +38,11 @@ public class SongController {
                 model.addAttribute("playlists", new ArrayList<>());
             }
         } else {
-            // Если юзер не вошел — список плейлистов пуст
             model.addAttribute("playlists", new ArrayList<>());
         }
         return "index";
     }
 
-    // 2. ИСПРАВЛЕННЫЙ МЕТОД ЛАЙКА
     @PostMapping("/like/{songId}")
     @ResponseBody
     @Transactional
@@ -53,7 +50,6 @@ public class SongController {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Используем новый метод репозитория
         Playlist favorites = playlistRepository.findByNameIgnoreCaseAndUserId("Favorites", user.getId())
                 .orElseGet(() -> {
                     Playlist p = new Playlist();
@@ -79,14 +75,13 @@ public class SongController {
         }
     }
 
-    // 3. МЕТОД ДЛЯ ЗАГРУЗКИ ПЕСЕН ПЛЕЙЛИСТА
     @GetMapping("/playlist/{id}/songs")
     @ResponseBody
     @Transactional(readOnly = true)
     public List<Song> getPlaylistSongs(@PathVariable Long id) {
         return playlistRepository.findById(id)
                 .map(p -> {
-                    p.getSongs().size(); // Принудительный "прогрев" списка
+                    p.getSongs().size();
                     return p.getSongs();
                 })
                 .orElse(new ArrayList<>());
@@ -149,12 +144,10 @@ public class SongController {
         Playlist playlist = playlistRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Плейлист не найден"));
 
-        // Запрещаем удалять избранное
         if ("Favorites".equalsIgnoreCase(playlist.getName())) {
             return ResponseEntity.badRequest().body("Нельзя удалить Избранное");
         }
 
-        // Сначала очищаем связи с песнями, чтобы не было ошибок внешнего ключа
         playlist.getSongs().clear();
         playlistRepository.delete(playlist);
 
