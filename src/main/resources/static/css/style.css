@@ -156,4 +156,25 @@ body {
     backdrop-filter: blur(5px);
 }
 
+/* Базовый стиль кнопки лайка */
+.like-btn {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.6); /* Полупрозрачный белый изначально */
+    font-size: 24px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-shadow: 0 0 5px rgba(0,0,0,0.2);
+}
 
+.like-btn:hover {
+    color: white;
+    transform: scale(1.2);
+}
+
+/* Состояние, когда лайк поставлен */
+.like-btn.liked {
+    color: #ff4b2b !important; /* Ярко-красный */
+    text-shadow: 0 0 15px rgba(255, 75, 43, 0.8); /* Свечение */
+    transform: scale(1.1);
+}
