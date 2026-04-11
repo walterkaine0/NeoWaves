@@ -12,6 +12,6 @@ public class NeoWavesApplication {
     
 }
 /*
-Сделай простое приложение по типу Spotify в стиле фрутигер аэро и чтобы можно было потом накатить функционал, но мне сейчас для предзащиты нужен готовый продукт, сделано должно быть на джаве спринге, вот гитхаб проекта https://github.com/walterkaine0/NeoWaves
-Я скину еще er-диаграмму бд, ты можешь что то убрать на данный момент или добавить если необходимо
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
  */
