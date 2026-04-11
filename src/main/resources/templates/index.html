@@ -2,121 +2,402 @@
 <html xmlns:th="http://thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>NeoWaves | Aero Player</title>
-    <!-- Подключаем твой style.css -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeoWaves | Spotify Aero Edition</title>
+    <script src="https://tailwindcss.com"></script>
+
     <link rel="stylesheet" th:href="@{/css/style.css}">
+
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
 </head>
 <body>
+<div class="app-container" style="display: grid; grid-template-columns: 260px 1fr; height: calc(100vh - 90px); overflow: hidden;">
 
-<div class="player-card">
-    <!-- Обложка (меняется через JS) -->
-    <div id="album-cover" class="album-cover"></div>
+    <!-- САЙДБАР -->
+    <aside class="sidebar" style="background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(20px); border-right: 1px solid rgba(255, 255, 255, 0.1); width: 260px; height: 100vh; padding: 20px; display: flex; flex-direction: column;">
+        <div style="font-size: 24px; font-weight: 900; font-style: italic; margin-bottom: 30px;">NeoWaves</div>
 
-    <div class="song-info">
-        <h2 id="track-title" style="color: white; text-shadow: 0 2px 10px rgba(0,0,0,0.5); margin-bottom: 5px;">Loading...</h2>
-        <p id="artist-name" style="color: rgba(255,255,255,0.8); margin: 0 0 15px 0; font-size: 1.1em;"></p>
+        <nav style="display: flex; flex-direction: column; gap: 10px;">
+            <div class="menu-item active" onclick="location.reload()" style="padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.1); cursor: pointer;">🏠 Главная</div>
+            <div class="menu-item" style="padding: 10px; opacity: 0.6; cursor: pointer;">🔍 Поиск</div>
+        </nav>
 
-        <!-- Кнопка Like -->
-        <button class="btn-frutiger"
-                style="font-size: 14px; width: auto; height: 35px; padding: 0 20px; margin-bottom: 20px;"
-                onclick="likeCurrentSong()">
-            ❤ Like
-        </button>
+        <div style="margin-top: 30px;">
+            <p style="font-size: 11px; opacity: 0.5; font-weight: bold; margin-bottom: 15px; letter-spacing: 1px;">ПЛЕЙЛИСТЫ</p>
+            <div id="playlists-container" style="display: flex; flex-direction: column; gap: 8px;">
+                <!-- Твоя рабочая логика из nonstab -->
+                <div th:each="pl : ${playlists}" class="playlist-item"
+                     th:onclick="|openPlaylist(${pl.id})|"
+                     style="padding: 8px 12px; border-radius: 10px; background: rgba(255,255,255,0.05); cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: 0.3s;">
+                    <span th:text="${pl.name == 'Favorites' ? '💎 ' + pl.name : '💿 ' + pl.name}"></span>
+                    <button th:if="${pl.name != 'Favorites'}" th:onclick="|handleDeletePlaylist(${pl.id})|" style="background:none; border:none; color:rgba(255,255,255,0.3); cursor:pointer;">×</button>
+                </div>
+            </div>
+            <button onclick="handleCreatePlaylist()" style="width: 100%; margin-top: 15px; padding: 10px; border-radius: 20px; border: none; background: white; color: #0072ff; font-weight: bold; cursor: pointer;">+ Создать</button>
+        </div>
+    </aside>
 
-        <!-- Скрытый аудио-элемент -->
-        <audio id="main-audio"></audio>
-    </div>
+    <!-- ОСНОВНОЙ КОНТЕНТ (Сетка песен) -->
+    <main class="main-content">
+        <header style="width: 100%; display: flex; justify-content: flex-end; padding: 20px 40px; box-sizing: border-box;">
+            <div id="auth-section" style="display: flex; align-items: center; gap: 15px;">
+                <span id="user-name" style="color: white; font-weight: bold; font-size: 14px;"></span>
+                <button id="login-btn" onclick="handleLogin()" style="background: rgba(255,255,255,0.1); border: 1px solid white; color: white; padding: 8px 25px; border-radius: 20px; cursor: pointer;">Войти</button>
+                <button id="logout-btn" onclick="handleLogout()" style="display: none; background: none; border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 25px; border-radius: 20px; cursor: pointer;">Выйти</button>
+            </div>
+        </header>
 
-    <!-- Кнопки управления с отражением -->
-    <div class="controls-demo">
-        <div class="btn-frutiger" onclick="prevTrack()">⏮</div>
-        <div id="play-btn" class="btn-frutiger" style="transform: scale(1.2); background: rgba(255,255,255,0.3);" onclick="togglePlay()">▶</div>
-        <div class="btn-frutiger" onclick="nextTrack()">⏭</div>
-    </div>
+        <section class="content">
+            <div id="content-grid" class="album-grid">
+                <!-- Сюда Thymeleaf рендерит песни при загрузке, а JS — при выборе плейлиста -->
+                <div th:each="song, iter : ${songs}" th:if="${song != null}" class="album-card">
+                    <div th:onclick="|playSpecific(${iter.index})|">
+                        <img th:src="${song.album?.coverUrl ?: '/img/default.png'}" alt="Cover">
+                        <h4 th:text="${song.title ?: 'Untitled'}"></h4>
+                        <p th:text="${song.album?.artist?.name ?: 'Unknown'}"></p>
+                    </div>
+
+                    <!-- Добавление в плейлист -->
+                    <select class="add-to-pl" th:onchange="|addToPlaylist(this.value, ${song.id})|">
+                        <option value="">+ В плейлист</option>
+                        <option th:each="pl : ${playlists}" th:if="${pl != null}"
+                                th:value="${pl.id}" th:text="${pl.name}"></option>
+                    </select>
+                </div>
+            </div>
+        </section>
+    </main>
 </div>
 
+
+<audio id="main-audio"></audio>
+<footer class="music-player" style="position: fixed; bottom: 0; left: 0; width: 100%; height: 90px; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(25px); border-top: 1px solid rgba(255, 255, 255, 0.3); display: flex; justify-content: space-between; align-items: center; padding: 0 30px; box-sizing: border-box; z-index: 9999; color: white;">
+
+    <!-- Лево: Инфо -->
+    <div style="width: 25%; display: flex; align-items: center; gap: 15px;">
+        <div id="mini-cover" style="width: 56px; height: 56px; border-radius: 8px; background: rgba(255,255,255,0.2); background-size: cover; box-shadow: 0 4px 10px rgba(0,0,0,0.3);"></div>
+        <div style="overflow: hidden;">
+            <p id="track-title" style="margin: 0; font-weight: bold; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Выберите трек</p>
+            <p id="artist-name" style="margin: 0; font-size: 12px; opacity: 0.6;">...</p>
+        </div>
+    </div>
+
+    <!-- Центр: Управление -->
+    <div style="width: 50%; display: flex; flex-direction: column; align-items: center; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 30px;">
+            <button onclick="prevTrack()" style="background: none; border: none; color: white; cursor: pointer; font-size: 20px;">⏮</button>
+            <div id="play-btn" onclick="togglePlay()" style="width: 46px; height: 46px; background: radial-gradient(circle at 30% 30%, #ffffff 0%, #dcdcdc 100%); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: #0072ff; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); font-size: 18px;">▶</div>
+            <button onclick="nextTrack()" style="background: none; border: none; color: white; cursor: pointer; font-size: 20px;">⏭</button>
+        </div>
+        <div style="width: 100%; display: flex; align-items: center; gap: 12px; font-size: 11px;">
+            <span id="current-time">0:00</span>
+            <div id="progress-container" style="flex-grow: 1; height: 5px; background: rgba(255, 255, 255, 0.2); border-radius: 5px; cursor: pointer; position: relative; overflow: hidden;">
+                <div id="progress-fill" style="height: 100%; width: 0%; background: #00fff2; box-shadow: 0 0 10px #00fff2; transition: width 0.1s linear;"></div>
+            </div>
+            <span id="total-time">0:00</span>
+        </div>
+    </div>
+
+    <!-- Право: Лайк -->
+    <div style="width: 25%; display: flex; justify-content: flex-end;">
+        <button class="like-btn" onclick="handleLike()">❤</button>
+    </div>
+</footer>
+
 <script th:inline="javascript">
-    // Собираем данные из Java в массив JavaScript без рекурсии
-    const songs = [];
+
+// --- 2. Массив песен (Thymeleaf) ---
+// 1. Формируем массив песен из Spring Model
+    let songs = [];
     /*[# th:each="s : ${songs}"]*/
-    songs.push({
-        id: /*[[${s.id}]]*/ 0,
-        title: /*[[${s.title}]]*/ 'Unknown',
-        s3Url: /*[[${s.s3Url}]]*/ '',
-        // Тянем обложку из альбома и имя артиста из его модели
-        coverUrl: /*[[${s.album != null ? s.album.coverUrl : ''}]]*/ '',
-        artist: /*[[${s.album != null && s.album.artist != null ? s.album.artist.name : 'Unknown Artist'}]]*/ 'Unknown'
-    });
+        /*[# th:if="${s != null}"]*/
+        songs.push({
+            id: [[${s?.id}]],
+            title: [[${s?.title ?: 'Без названия'}]],
+            s3Url: [[${s?.s3Url ?: ''}]],
+            coverUrl: [[${s?.album?.coverUrl ?: ''}]],
+            artist: [[${s?.album?.artist?.name ?: 'Неизвестен'}]]
+        });
+        /*[/]*/
     /*[/]*/
-
     let currentIndex = 0;
-
     const audio = document.getElementById('main-audio');
     const playBtn = document.getElementById('play-btn');
-    const trackTitle = document.getElementById('track-title');
-    const artistName = document.getElementById('artist-name');
-    const albumCover = document.getElementById('album-cover');
 
-    // Загрузка данных трека в интерфейс
+    // 2. Функции плеера
     function loadTrack(index) {
-        if (songs.length === 0) return;
-        const song = songs[index];
+    if (songs.length === 0) return;
+    const s = songs[index];
+    document.getElementById('track-title').innerText = s.title;
+    document.getElementById('artist-name').innerText = s.artist;
+    document.getElementById('mini-cover').style.backgroundImage = `url('${s.coverUrl}')`;
 
-        trackTitle.innerText = song.title;
-        artistName.innerText = song.artist;
-        albumCover.style.backgroundImage = `url('${song.coverUrl}')`;
-        audio.src = song.s3Url;
+    // СБРОС ЛАЙКА: при загрузке новой песни всегда делаем сердечко белым
+    const heartBtn = document.querySelector('.like-btn');
+    if (heartBtn) {
+        heartBtn.classList.remove('liked');
     }
 
-    // Логика кнопки Play/Pause
-    function togglePlay() {
-        if (!audio.src) return;
-        if (audio.paused) {
-            audio.play();
-            playBtn.innerHTML = "⏸";
-        } else {
-            audio.pause();
-            playBtn.innerHTML = "▶";
-        }
-    }
+    audio.src = s.s3Url;
+}
 
-    // Переключение треков
-    function nextTrack() {
+    // Вызываем загрузку первого трека, если они есть
+    if (songs.length > 0) { loadTrack(0); }
+
+
+
+    window.nextTrack = function() {
         if (songs.length === 0) return;
         currentIndex = (currentIndex + 1) % songs.length;
         loadTrack(currentIndex);
         audio.play();
-        playBtn.innerHTML = "⏸";
-    }
+        playBtn.innerText = "⏸";
+    };
 
-    function prevTrack() {
+    window.prevTrack = function() {
         if (songs.length === 0) return;
         currentIndex = (currentIndex - 1 + songs.length) % songs.length;
         loadTrack(currentIndex);
         audio.play();
-        playBtn.innerHTML = "⏸";
+        playBtn.innerText = "⏸";
+    };
+
+
+
+    // 3. Таймбар и прогресс
+    audio.ontimeupdate = () => {
+        if (audio.duration) {
+            const pct = (audio.currentTime / audio.duration) * 100;
+            document.getElementById('progress-fill').style.width = pct + '%';
+            document.getElementById('current-time').innerText = formatTime(audio.currentTime);
+        }
+    };
+
+    document.getElementById('progress-container').onclick = (e) => {
+        const width = e.currentTarget.clientWidth;
+        const clickX = e.offsetX;
+        audio.currentTime = (clickX / width) * audio.duration;
+    };
+
+    function formatTime(s) {
+        let min = Math.floor(s / 60);
+        let sec = Math.floor(s % 60);
+        return min + ":" + (sec < 10 ? '0' + sec : sec);
     }
 
-    // Функция Лайка (отправляет POST запрос на сервер)
-    function likeCurrentSong() {
-        const song = songs[currentIndex];
-        fetch('/like/' + song.id, {
-            method: 'POST'
-        })
-        .then(response => response.text())
+    // 4. Заглушки для функций плейлиста (чтобы консоль не ругалась)
+    window.openPlaylist = (id) => { console.log("Open playlist", id); };
+    window.handleDeletePlaylist = (id) => { console.log("Delete playlist", id); };
+
+
+// --- 4. Восстановление Firebase функций ---
+    document.addEventListener("DOMContentLoaded", () => {
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyDJhWJDrW-rN2a3zFp_hAL5EWFn5UT9B28",
+        authDomain: "neowaves-824c3.firebaseapp.com",
+        projectId: "neowaves-824c3",
+        storageBucket: "neowaves-824c3.firebasestorage.app",
+        messagingSenderId: "398266414799",
+        appId: "1:398266414799:web:f58c71fe879b531f8b29ba",
+        measurementId: "G-YS6MJR4KBX"
+    };
+
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const auth = firebase.auth();
+
+        // 1. Функция входа
+    window.handleLogin = () => {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        auth.signInWithPopup(provider)
+            .then(result => console.log("LOGIN OK", result.user))
+            .catch(err => console.error("Ошибка входа:", err));
+    };
+
+    window.playSpecific = (index) => {
+        if (!songs[index]) return;
+        currentIndex = index;
+        const s = songs[index];
+        document.getElementById('track-title').innerText = s.title;
+        document.getElementById('artist-name').innerText = s.artist;
+        document.getElementById('mini-cover').style.backgroundImage = `url('${s.coverUrl}')`;
+        audio.src = s.s3Url;
+        audio.play();
+        document.getElementById('play-btn').innerText = "⏸";
+    };
+
+    window.togglePlay = () => {
+        if (!audio.src && songs.length > 0) window.playSpecific(0);
+        if (audio.paused) { audio.play(); document.getElementById('play-btn').innerText = "⏸"; }
+        else { audio.pause(); document.getElementById('play-btn').innerText = "▶"; }
+    };
+
+    window.handleLogout = () => {
+    auth.signOut().then(() => {
+        console.log("Вышли из аккаунта");
+        location.reload();
+    }).catch(err => console.error("Ошибка при выходе:", err));
+};
+
+    // Правильный вызов без скобок после auth
+    auth.onAuthStateChanged(user => {
+        const loginBtn = document.getElementById('login-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const userName = document.getElementById('user-name');
+
+        if (user) {
+            console.log("Пользователь вошел:", user.email);
+            // Используем setProperty, чтобы перебить инлайновые стили из HTML
+            if (loginBtn) loginBtn.style.setProperty('display', 'none', 'important');
+            if (logoutBtn) logoutBtn.style.setProperty('display', 'block', 'important');
+            if (userName) userName.innerText = user.displayName || user.email;
+
+            user.getIdToken(true).then(idToken => {
+            fetch('/api/auth/sync', { // Убедись, что в Java этот путь разрешен
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: idToken })
+            }).then(res => {
+                console.log("Сервер подтвердил сессию:", res.ok);
+            });
+        });
+        } else {
+            console.log("Пользователь не авторизован");
+            if (loginBtn) loginBtn.style.setProperty('display', 'block', 'important');
+            if (logoutBtn) logoutBtn.style.setProperty('display', 'none', 'important');
+            if (userName) userName.innerText = '';
+        }
+    });
+
+    window.handleLike = () => {
+    const u = firebase.auth().currentUser;
+    if (!u) return alert("Войдите в аккаунт!");
+    const s = songs[currentIndex];
+    if (!s) return alert("Сначала выберите трек!");
+
+    const heartBtn = document.querySelector('.like-btn');
+
+    // Отправляем запрос на тот же эндпоинт
+    // Обычно в Spring Boot логика /like реализована как "переключатель":
+    // если лайка нет — добавляет, если есть — удаляет.
+    fetch(`/like/${s.id}?userEmail=${encodeURIComponent(u.email)}`, { method: 'POST' })
+        .then(r => r.text())
         .then(message => {
-            alert(message); // Показываем "Added to Favorites!"
+            console.log("Ответ сервера:", message);
+
+            // Переключаем класс: если был 'liked' — удалит, если не было — добавит
+            heartBtn.classList.toggle('liked');
+
+            // Опционально: выводим сообщение только если нужно
+            // alert(message);
         })
-        .catch(error => console.error('Error:', error));
-    }
+        .catch(err => console.error("Ошибка при переключении лайка:", err));
+};
 
-    // Авто-воспроизведение следующего трека
-    audio.onended = nextTrack;
+    window.addToPlaylist = (playlistId, songId) => {
+        if (!playlistId) return;
+        fetch(`/playlist/${playlistId}/add/${songId}`, { method: 'POST' })
+            .then(r => r.text())
+            .then(msg => { alert(msg); location.reload(); });
+    };
 
-    // Инициализация при загрузке страницы
-    if (songs.length > 0) {
-        loadTrack(currentIndex);
-    }
+
+    window.handleCreatePlaylist = () => {
+        const n = prompt("Название плейлиста:");
+        if (n) fetch(`/playlist/create?name=${encodeURIComponent(n)}&userEmail=${auth.currentUser.email}`, { method: 'POST' })
+            .then(r => r.ok ? location.reload() : alert("Ошибка"));
+    };
+
+    window.openPlaylist = (id) => {
+    fetch(`/playlist/${id}/songs`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.length === 0) return alert("Плейлист пуст");
+
+            // 1. Обновляем глобальный список песен для плеера
+            songs = data.map(s => ({
+                id: s.id,
+                title: s.title,
+                s3Url: s.s3Url,
+                coverUrl: s.album?.coverUrl || '',
+                artist: s.album?.artist?.name || 'Unknown'
+            }));
+
+            // 2. Очищаем сетку в центре экрана
+            const grid = document.getElementById('content-grid');
+            grid.innerHTML = '';
+
+            // 3. Рисуем новые карточки
+            songs.forEach((s, index) => {
+                const card = document.createElement('div');
+                card.className = 'album-card';
+                // Копируем стили из твоего Thymeleaf-шаблона
+                card.style = "background: rgba(255, 255, 255, 0.05); border-radius: 20px; padding: 15px; transition: 0.3s; cursor: pointer;";
+
+                card.innerHTML = `
+                    <div onclick="playSpecific(${index})">
+                        <img src="${s.coverUrl}" style="width: 100%; border-radius: 15px; margin-bottom: 10px; box-shadow: 0 8px 20px rgba(0,0,0,0.3);">
+                        <h4 style="margin-bottom: 5px; font-size: 16px;">${s.title}</h4>
+                        <p style="font-size: 12px; opacity: 0.6;">${s.artist}</p>
+                    </div>
+                    <button onclick="removeFromPlaylist(${id}, ${s.id})"
+                            style="width: 100%; margin-top: 10px; background: rgba(255,0,0,0.1); color: #ff4b2b; border: 1px solid rgba(255,75,43,0.3); border-radius: 10px; padding: 5px; font-size: 11px; cursor: pointer;">
+                        🗑 Удалить
+                    </button>
+                `;
+                grid.appendChild(card);
+            });
+
+            console.log("Интерфейс обновлен треками из плейлиста");
+        })
+        .catch(err => console.error("Ошибка загрузки плейлиста:", err));
+};
+    window.removeFromPlaylist = (playlistId, songId) => {
+    if(!confirm("Удалить трек из этого плейлиста?")) return;
+    fetch(`/playlist/${playlistId}/remove/${songId}`, { method: 'POST' })
+        .then(r => r.ok ? window.openPlaylist(playlistId) : alert("Ошибка при удалении"));
+};
+});
+
+    window.handleDeletePlaylist = (id) => {
+    if (!confirm("Вы действительно хотите удалить этот плейлист?")) return;
+
+    fetch(`/playlist/delete/${id}`, { method: 'POST' })
+        .then(r => {
+            if (r.ok) location.reload(); // Перезагружаем, чтобы обновить сайдбар
+            else alert("Ошибка при удалении");
+        });
+};
+    window.removeFromPlaylist = (playlistId, songId) => {
+    if(!confirm("Удалить этот трек из плейлиста?")) return;
+
+    fetch(`/playlist/${playlistId}/remove/${songId}`, { method: 'POST' })
+        .then(r => r.text())
+        .then(msg => {
+            console.log(msg);
+            openPlaylist(playlistId); // Обновляем вид плейлиста
+        })
+        .catch(err => alert("Ошибка при удалении"));
+};
+
+
+    window.handleLogin = () => console.log("Firebase инициализируется...");
+    window.handleLogout = () => {};
+    window.handleLike = () => alert("Войдите в аккаунт");
+    window.handleCreatePlaylist = () => alert("Войдите в аккаунт");
+
+    if (songs.length > 0) loadTrack(0);
+
+
+
 </script>
+
+
 </body>
 </html>
