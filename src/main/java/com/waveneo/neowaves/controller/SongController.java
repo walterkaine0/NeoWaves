@@ -109,6 +109,12 @@ public class SongController {
         return "Уже в плейлисте";
     }
 
+    @GetMapping("/playlist/user/{email}")
+    @ResponseBody
+    public List<Playlist> getUserPlaylists(@PathVariable String email) {
+        return playlistRepository.findByUserEmail(email); // Примерный метод репозитория
+    }
+
     @PostMapping("/playlist/create")
     @ResponseBody
     @Transactional

@@ -11,3 +11,5 @@ public class NeoWavesApplication {
     }
     
 }
+
+//для запуска десктопа зайти в терминал и ввести: npm start
