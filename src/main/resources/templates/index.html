@@ -62,7 +62,7 @@
                     </div>
 
                     <!-- Добавление в плейлист -->
-                    <div class="playlist-selector-container" data-song-id="${s.id}"></div>
+                    <div class="playlist-selector-container" th:attr="data-song-id=${song.id}"></div>
                 </div>
             </div>
         </section>
@@ -241,8 +241,6 @@
         }).catch(err => console.error("Ошибка при выходе:", err));
     };
 
-    let globalPlaylists = []; // Здесь будем хранить список для выпадающих меню
-
         // Правильный вызов без скобок после auth
         auth.onAuthStateChanged(user => {
             const loginBtn = document.getElementById('login-btn');
@@ -298,82 +296,79 @@
             .catch(err => console.error("Ошибка при переключении лайка:", err));
     };
 
-        window.addToPlaylist = (playlistId, songId) => {
-    if (!playlistId) return;
 
-    fetch(`${API_BASE}/playlist/${playlistId}/add/${songId}`, { method: 'POST' })
-        .then(r => r.text())
-        .then(msg => {
-            console.log(msg);
-            // Вместо alert можно сделать временное уведомление на экране
-        })
-        .catch(err => console.error("Ошибка добавления:", err));
-};
 
 
     const API_BASE = 'http://localhost:8081';
-    const USER_EMAIL = "denizshkololo@gmail.com"; // Временно жестко, пока не настроишь динамику
+    let globalPlaylists = [];
+    let songs = [];
+
+
+
+    // 1. Инициализация при загрузке
+    window.onload = () => {
+        window.loadSidebar();
+    };
+
+    // 2. Загрузка сайдбара и плейлистов
+    window.loadSidebar = () => {
+        const email = "denizshkololo@gmail.com";
+        fetch(`${API_BASE}/playlist/user?email=${encodeURIComponent(email)}`)
+            .then(res => res.json())
+            .then(data => {
+                globalPlaylists = data;
+                const container = document.getElementById('playlists-container');
+                if (container) {
+                    container.innerHTML = '';
+                    data.forEach(p => {
+                        const item = document.createElement('div');
+                        item.className = 'playlist-item';
+                        item.style = "display: flex; justify-content: space-between; align-items: center; cursor: pointer; padding: 5px 10px;";
+                        item.onclick = () => window.openPlaylist(p.id);
+                        item.innerHTML = `
+                            <span>${p.name}</span>
+                            <span onclick="window.handleDeletePlaylist(event, ${p.id})"
+                                  style="color: rgba(255,255,255,0.5); font-size: 18px; font-weight: bold; padding: 0 5px;">×</span>
+                        `;
+                        container.appendChild(item);
+                    });
+                }
+                window.updateAllSelects();
+            });
+    };
+
 
     window.handleCreatePlaylist = () => {
-    document.getElementById('playlistModal').style.display = 'flex';
-};
+        document.getElementById('playlistModal').style.display = 'flex';
+    };
 
-window.closeModal = () => {
-    document.getElementById('playlistModal').style.display = 'none';
-};
+    window.closeModal = () => {
+        document.getElementById('playlistModal').style.display = 'none';
+    };
 
-window.confirmCreatePlaylist = () => {
-    const name = document.getElementById('newPlaylistName').value;
-    if (!name) return alert("Введите название!");
+    window.confirmCreatePlaylist = () => {
+        const name = document.getElementById('newPlaylistName').value;
+        if (!name) return alert("Введите название!");
 
-    const email = "denizshkololo@gmail.com";
-    fetch(`${API_BASE}/playlist/create?name=${encodeURIComponent(name)}&userEmail=${encodeURIComponent(email)}`, { method: 'POST' })
-        .then(r => {
-            if (r.ok) {
-                closeModal();
-                location.reload();
-            }
-        });
-};
-
-    window.loadSidebar = () => {
-    const email = "denizshkololo@gmail.com";
-
-    fetch(`${API_BASE}/playlist/user?email=${encodeURIComponent(email)}`)
-        .then(res => res.json())
-        .then(data => {
-            globalPlaylists = data; // Сохраняем для будущего использования
-            const container = document.getElementById('playlists-container');
-            if (container) {
-                container.innerHTML = '';
-                data.forEach(p => {
-                    const playlistItem = document.createElement('div');
-                    playlistItem.className = 'playlist-item';
-                    playlistItem.style = "display: flex; justify-content: space-between; align-items: center; cursor: pointer; padding: 5px 10px;";
-                    playlistItem.onclick = () => window.openPlaylist(p.id);
-
-                    playlistItem.innerHTML = `
-                        <span>${p.name}</span>
-                        <span onclick="window.handleDeletePlaylist(event, ${p.id})"
-                              style="color: rgba(255,255,255,0.5); font-size: 18px; font-weight: bold; padding: 0 5px;">×</span>
-                    `;
-                    container.appendChild(playlistItem);
-                });
-            }
-            // ВАЖНО: После загрузки данных обновляем все пустые селекторы на странице
-            updateAllSelects();
-        });
-};
-
-    window.updateAllSelects = () => {
+        const email = "denizshkololo@gmail.com";
+        fetch(`${API_BASE}/playlist/create?name=${encodeURIComponent(name)}&userEmail=${encodeURIComponent(email)}`, { method: 'POST' })
+            .then(r => {
+                if (r.ok) {
+                    closeModal();
+                    location.reload();
+                }
+            });
+    };
+    // 3. Обновление ВЫПАДАЮЩИХ СПИСКОВ (Aero Style)
+window.updateAllSelects = () => {
     const containers = document.querySelectorAll('.playlist-selector-container');
 
     containers.forEach(container => {
-        const songId = container.dataset.songId;
+        const songId = container.dataset.songId; // Получаем ID из атрибута
+        if (!songId) return;
 
-        // Генерируем пункты меню ПРЯМО ВНУТРИ цикла для каждого контейнера
         const menuItemsHtml = globalPlaylists.map(p => {
-            // Передаем songId как явное числовое значение
+            // Здесь передаем два числа. Никаких ${} внутри onclick!
             return `<div class="dropdown-item" onclick="window.confirmAddToPlaylist(${p.id}, ${songId})">${p.name}</div>`;
         }).join('');
 
@@ -381,7 +376,7 @@ window.confirmCreatePlaylist = () => {
             <div class="custom-dropdown">
                 <div class="dropdown-selected" onclick="window.toggleDropdown(event, ${songId})">
                     <span>🫧 + В плейлист</span>
-                    <span>▼</span>
+                    <span style="font-size: 10px; opacity: 0.7;">▼</span>
                 </div>
                 <div class="dropdown-menu" id="menu-${songId}">
                     ${menuItemsHtml}
@@ -391,32 +386,34 @@ window.confirmCreatePlaylist = () => {
     });
 };
 
-        window.toggleDropdown = (event, songId) => {
+       // 4. Управление выпадающим списком
+    window.toggleDropdown = (event, songId) => {
         event.stopPropagation();
-        // Закрываем все открытые меню
         document.querySelectorAll('.dropdown-menu').forEach(m => {
             if (m.id !== `menu-${songId}`) m.style.display = 'none';
         });
-
         const menu = document.getElementById(`menu-${songId}`);
         if (menu) {
             menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
         }
     };
 
-
     window.confirmAddToPlaylist = (playlistId, songId) => {
-        console.log("Добавляем:", playlistId, "в трек:", songId);
-        if (typeof window.addToPlaylist === 'function') {
-            window.addToPlaylist(playlistId, songId);
-        }
-        // Скрываем меню после выбора
+        window.addToPlaylist(playlistId, songId);
         document.querySelectorAll('.dropdown-menu').forEach(m => m.style.display = 'none');
     };
 
-// Вызывай это при загрузке
-window.onload = window.loadSidebar;
+     window.addToPlaylist = (playlistId, songId) => {
+        if (!playlistId) return;
 
+        fetch(`${API_BASE}/playlist/${playlistId}/add/${songId}`, { method: 'POST' })
+            .then(r => r.text())
+            .then(msg => {
+                console.log(msg);
+                // Вместо alert можно сделать временное уведомление на экране
+            })
+            .catch(err => console.error("Ошибка добавления:", err));
+    };
 
 
 
@@ -471,8 +468,6 @@ window.onload = window.loadSidebar;
     };
     });
 
-    let playlistIdToDelete = null;
-
     window.handleDeletePlaylist = (event, id) => {
         event.stopPropagation();
         playlistIdToDelete = id;
@@ -510,18 +505,21 @@ window.onload = window.loadSidebar;
     };
 
 
-        window.removeFromPlaylist = (playlistId, songId) => {
-        if(!confirm("Удалить этот трек из плейлиста?")) return;
+    window.removeFromPlaylist = (playlistId, songId) => {
+    if(!confirm("Удалить этот трек из плейлиста?")) return;
 
-        fetch(`${API_BASE}/playlist/${playlistId}/remove/${songId}`, { method: 'POST' })
-            .then(r => r.text())
-            .then(msg => {
-                console.log(msg);
-                openPlaylist(playlistId); // Обновляем вид плейлиста
-            })
-            .catch(err => alert("Ошибка при удалении"));
-    };
+    fetch(`${API_BASE}/playlist/${playlistId}/remove/${songId}`, { method: 'POST' })
+        .then(r => r.text())
+        .then(msg => {
+            console.log(msg);
+            openPlaylist(playlistId); // Обновляем вид плейлиста
+        })
+        .catch(err => alert("Ошибка при удалении"));
+};
 
+    document.addEventListener('click', () => {
+    document.querySelectorAll('.dropdown-menu').forEach(m => m.style.display = 'none');
+});
 
         window.handleLogin = () => console.log("Firebase инициализируется...");
         window.handleLogout = () => {};
