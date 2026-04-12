@@ -27,24 +27,27 @@ public class SongController {
 
     @GetMapping("/")
     public String index(Model model, @RequestParam(required = false) String userEmail) {
+        // Песни показываем всем
         model.addAttribute("songs", songRepository.findAll());
 
-        if (userEmail != null && !userEmail.isEmpty()) {
-            // Показываем плейлисты только конкретного юзера
+        // Если email не передан, ПРИНУДИТЕЛЬНО очищаем список плейлистов
+        if (userEmail == null || userEmail.trim().isEmpty() || userEmail.equals("null")) {
+            model.addAttribute("playlists", new ArrayList<Playlist>());
+        } else {
             User user = userRepository.findByEmail(userEmail).orElse(null);
             if (user != null) {
-                model.addAttribute("playlists", playlistRepository.findAll().stream()
-                        .filter(p -> p.getUser() != null && p.getUser().getId().equals(user.getId()))
-                        .toList());
+                // Фильтруем плейлисты именно этого пользователя
+                List<Playlist> userPlaylists = playlistRepository.findAll().stream()
+                        .filter(p -> p.getUser() != null && p.getUser().getEmail().equalsIgnoreCase(userEmail))
+                        .toList();
+                model.addAttribute("playlists", userPlaylists);
             } else {
-                model.addAttribute("playlists", new ArrayList<>());
+                model.addAttribute("playlists", new ArrayList<Playlist>());
             }
-        } else {
-            // Если юзер не вошел — список плейлистов пуст
-            model.addAttribute("playlists", new ArrayList<>());
         }
         return "index";
     }
+
 
     // 2. ИСПРАВЛЕННЫЙ МЕТОД ЛАЙКА
     @PostMapping("/like/{songId}")

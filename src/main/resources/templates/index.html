@@ -248,42 +248,58 @@
         };
 
         window.handleLogout = () => {
-    console.log("Попытка выхода...");
-    firebase.auth().signOut()
-        .then(() => {
-            console.log("Firebase: Выход выполнен");
-            // Обязательно для Electron, чтобы сбросить состояние
-            window.location.reload();
-        })
-        .catch((error) => {
-            console.error("Ошибка при выходе:", error);
-        });
+    firebase.auth().signOut().then(() => {
+        console.log("Вышли из Firebase");
+        // Перенаправляем на чистый адрес без параметров
+        window.location.href = window.location.origin + window.location.pathname;
+    }).catch(err => console.error(err));
 };
 
-        // Правильный вызов без скобок после auth
-        auth.onAuthStateChanged(user => {
+
+        // 2. Мониторинг состояния пользователя
+         firebase.auth().onAuthStateChanged(user => {
             const loginBtn = document.getElementById('login-btn');
             const logoutBtn = document.getElementById('logout-btn');
             const userName = document.getElementById('user-name');
 
+            // Получаем email из текущего URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const emailInUrl = urlParams.get('userEmail');
+
             if (user) {
                 console.log("Пользователь вошел:", user.email);
-                // Используем setProperty, чтобы перебить инлайновые стили из HTML
+
+                // Если мы залогинены, но в URL нет нашего email или он чужой — перезагружаем с правильным
+                if (emailInUrl !== user.email) {
+                    window.location.href = "/?userEmail=" + encodeURIComponent(user.email);
+                    return; // Прерываем выполнение, так как страница сейчас перезагрузится
+                }
+
+                // Визуальное отображение
                 if (loginBtn) loginBtn.style.setProperty('display', 'none', 'important');
                 if (logoutBtn) logoutBtn.style.setProperty('display', 'block', 'important');
                 if (userName) userName.innerText = user.displayName || user.email;
 
+                // Синхронизация сессии с бэкендом
                 user.getIdToken(true).then(idToken => {
-                fetch('/api/auth/sync', { // Убедись, что в Java этот путь разрешен
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token: idToken })
-                }).then(res => {
-                    console.log("Сервер подтвердил сессию:", res.ok);
+                    fetch('/api/auth/sync', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ token: idToken })
+                    }).then(res => {
+                        console.log("Сервер подтвердил сессию:", res.ok);
+                    });
                 });
-            });
+
             } else {
                 console.log("Пользователь не авторизован");
+
+                // Если пользователя НЕТ, а в URL остался email — очищаем адрес, чтобы скрыть плейлисты
+                if (emailInUrl) {
+                    window.location.href = "/";
+                    return;
+                }
+
                 if (loginBtn) loginBtn.style.setProperty('display', 'block', 'important');
                 if (logoutBtn) logoutBtn.style.setProperty('display', 'none', 'important');
                 if (userName) userName.innerText = '';
@@ -515,9 +531,6 @@ document.getElementById('confirmTrackDeleteBtn').onclick = () => {
     document.addEventListener('click', () => {
     document.querySelectorAll('.dropdown-menu').forEach(m => m.style.display = 'none');
 });
-
-        window.handleLogin = () => console.log("Firebase инициализируется...");
-        window.handleLogout = () => {};
 
 
 // Исправь вызов модалки создания плейлиста
