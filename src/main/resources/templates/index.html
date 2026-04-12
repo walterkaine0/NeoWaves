@@ -301,53 +301,75 @@
     };
 
         window.addToPlaylist = (playlistId, songId) => {
-        if (!playlistId || !songId) return;
+    if (!playlistId) return;
 
-        fetch(`${API_BASE}/playlist/${playlistId}/add/${songId}`, { method: 'POST' })
-            .then(r => r.text())
-            .then(msg => {
-                alert(msg); // "Добавлено в ..."
-            })
-            .catch(err => console.error("Ошибка:", err));
-    };
+    fetch(`${API_BASE}/playlist/${playlistId}/add/${songId}`, { method: 'POST' })
+        .then(r => r.text())
+        .then(msg => {
+            console.log(msg);
+            // Вместо alert можно сделать временное уведомление на экране
+        })
+        .catch(err => console.error("Ошибка добавления:", err));
+};
 
 
     const API_BASE = 'http://localhost:8081';
     const USER_EMAIL = "denizshkololo@gmail.com"; // Временно жестко, пока не настроишь динамику
 
-    // 1. Создание плейлиста (исправлено под @RequestParam)
     window.handleCreatePlaylist = () => {
-        const n = prompt("Название плейлиста:");
-        if (!n) return;
+    document.getElementById('playlistModal').style.display = 'flex';
+};
 
-        // Параметры идут после знака ?, а не в body
-        const url = `${API_BASE}/playlist/create?name=${encodeURIComponent(n)}&userEmail=${encodeURIComponent(USER_EMAIL)}`;
+window.closeModal = () => {
+    document.getElementById('playlistModal').style.display = 'none';
+};
 
-        fetch(url, { method: 'POST' })
-            .then(r => {
-                if (r.ok) {
-                    alert("Плейлист создан!");
-                    location.reload();
-                } else {
-                    alert("Ошибка сервера");
-                }
-            })
-            .catch(err => console.error("Сеть упала:", err));
-    };
+window.confirmCreatePlaylist = () => {
+    const name = document.getElementById('newPlaylistName').value;
+    if (!name) return alert("Введите название!");
+
+    const email = "denizshkololo@gmail.com";
+    fetch(`${API_BASE}/playlist/create?name=${encodeURIComponent(name)}&userEmail=${encodeURIComponent(email)}`, { method: 'POST' })
+        .then(r => {
+            if (r.ok) {
+                closeModal();
+                location.reload();
+            }
+        });
+};
 
     window.loadSidebar = () => {
-    const email = "denizshkololo@gmail.com"; // Почта из твоего браузера
+    const email = "denizshkololo@gmail.com";
 
     fetch(`${API_BASE}/playlist/user?email=${encodeURIComponent(email)}`)
         .then(res => res.json())
         .then(data => {
             console.log("Плейлисты получены:", data);
-            // Найди ID или класс контейнера в своем index.html, куда вставляются плейлисты
             const container = document.getElementById('playlists-container');
             if (container) {
-                container.innerHTML = ''; // Чистим
+                container.innerHTML = '';
                 data.forEach(p => {
-                    container.innerHTML += `<div onclick="openPlaylist(${p.id})" class="playlist-item">${p.name}</div>`;
+                    // Создаем элемент плейлиста
+                    const playlistItem = document.createElement('div');
+                    playlistItem.className = 'playlist-item';
+                    // Стили для расположения названия и крестика
+                    playlistItem.style = "display: flex; justify-content: space-between; align-items: center; cursor: pointer; padding: 5px 10px;";
+
+                    // Клик по самому элементу открывает плейлист
+                    playlistItem.onclick = () => window.openPlaylist(p.id);
+
+                    // Внутренняя разметка: Имя + Кнопка удаления
+                    playlistItem.innerHTML = `
+                        <span>${p.name}</span>
+                        <span onclick="window.handleDeletePlaylist(event, ${p.id})"
+                              style="color: rgba(255,255,255,0.5); font-size: 18px; font-weight: bold; padding: 0 5px; transition: 0.3s;"
+                              onmouseover="this.style.color='#ff4b2b'"
+                              onmouseout="this.style.color='rgba(255,255,255,0.5)'">
+                            ×
+                        </span>
+                    `;
+
+                    container.appendChild(playlistItem);
                 });
             }
         });
@@ -410,15 +432,45 @@ window.onload = window.loadSidebar;
     };
     });
 
-        window.handleDeletePlaylist = (id) => {
-        if (!confirm("Вы действительно хотите удалить этот плейлист?")) return;
+    let playlistIdToDelete = null;
 
-        fetch(`${API_BASE}/playlist/delete/${id}`, { method: 'POST' })
-            .then(r => {
-                if (r.ok) location.reload(); // Перезагружаем, чтобы обновить сайдбар
-                else alert("Ошибка при удалении");
-            });
+    window.handleDeletePlaylist = (event, id) => {
+        event.stopPropagation();
+        playlistIdToDelete = id;
+
+        const modal = document.getElementById('deleteModal');
+        const confirmBtn = document.getElementById('confirmDeleteBtn');
+
+        if (modal && confirmBtn) {
+            modal.style.display = 'flex';
+
+            // Привязываем действие прямо здесь
+            confirmBtn.onclick = () => {
+                if (!playlistIdToDelete) return;
+
+                fetch(`${API_BASE}/playlist/delete/${playlistIdToDelete}`, { method: 'POST' })
+                    .then(r => {
+                        if (r.ok) {
+                            window.closeDeleteModal();
+                            location.reload();
+                        } else {
+                            // Если это "Избранное", сервер вернет ошибку, и мы ее покажем
+                            r.text().then(text => alert(text));
+                            window.closeDeleteModal();
+                        }
+                    })
+                    .catch(err => console.error("Ошибка при удалении:", err));
+            };
+        }
     };
+
+    window.closeDeleteModal = () => {
+        const modal = document.getElementById('deleteModal');
+        if (modal) modal.style.display = 'none';
+        playlistIdToDelete = null;
+    };
+
+
         window.removeFromPlaylist = (playlistId, songId) => {
         if(!confirm("Удалить этот трек из плейлиста?")) return;
 
@@ -443,6 +495,67 @@ window.onload = window.loadSidebar;
 
 </script>
 
+<div id="playlistModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.1); backdrop-filter: blur(10px); z-index:9999; justify-content:center; align-items:center;">
+    <div style="background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 100%);
+                border: 1px solid rgba(255,255,255,0.5);
+                box-shadow: 0 8px 32px rgba(0,0,0,0.3), inset 0 0 15px rgba(255,255,255,0.5);
+                padding: 25px; border-radius: 25px; width: 350px; text-align: center;
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+
+        <h3 style="color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.5); margin-bottom: 20px; font-weight: 600;">🫧 Новый плейлист</h3>
+
+        <input type="text" id="newPlaylistName" placeholder="Назовите вашу волну..."
+               style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.4);
+                      margin-bottom: 20px; background: rgba(255,255,255,0.2); color: white;
+                      outline: none; box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);">
+
+        <div style="display: flex; justify-content: space-around; align-items: center;">
+            <button onclick="closeModal()"
+                    style="color: white; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3);
+                           padding: 8px 20px; border-radius: 15px; cursor: pointer; transition: 0.3s;">
+                Отмена
+            </button>
+
+            <button onclick="confirmCreatePlaylist()"
+                    style="background: linear-gradient(to bottom, #76eb14 0%, #1db954 100%);
+                           color: white; border: 1px solid #fff; padding: 10px 25px;
+                           border-radius: 20px; cursor: pointer; font-weight: bold;
+                           box-shadow: 0 4px 15px rgba(29, 185, 84, 0.4); transition: 0.3s;"
+                    onmouseover="this.style.transform='scale(1.05)'"
+                    onmouseout="this.style.transform='scale(1)'">
+                Создать
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно удаления -->
+<div id="deleteModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.1); backdrop-filter: blur(10px); z-index:9999; justify-content:center; align-items:center;">
+    <div style="background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 100%);
+                border: 1px solid rgba(255,255,255,0.5);
+                box-shadow: 0 8px 32px rgba(0,0,0,0.3), inset 0 0 15px rgba(255,255,255,0.5);
+                padding: 25px; border-radius: 25px; width: 350px; text-align: center;">
+
+        <h3 style="color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.5); margin-bottom: 20px;">🫧 Удалить плейлист?</h3>
+        <p style="color: white; margin-bottom: 20px; font-size: 14px; opacity: 0.9;">Вы уверены, что хотите стереть эту волну?</p>
+
+        <div style="display: flex; justify-content: space-around; align-items: center;">
+            <button onclick="closeDeleteModal()"
+                    style="color: white; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3);
+                           padding: 8px 20px; border-radius: 15px; cursor: pointer;">
+                Отмена
+            </button>
+
+            <button id="confirmDeleteBtn"
+                    style="background: linear-gradient(to bottom, #ff4b2b 0%, #ff1f1f 100%);
+                           color: white; border: 1px solid #fff; padding: 10px 25px;
+                           border-radius: 20px; cursor: pointer; font-weight: bold;
+                           box-shadow: 0 4px 15px rgba(255, 31, 31, 0.4);">
+                Удалить
+            </button>
+        </div>
+    </div>
+</div>
 
 </body>
 </html>
