@@ -120,8 +120,12 @@ public class SongController {
     @ResponseBody
     @Transactional
     public String createPlaylist(@RequestParam String name, @RequestParam String userEmail) {
+        if (userEmail == null || userEmail.trim().isEmpty()) {
+            return "Ошибка: Email пользователя не указан!";
+        }
+
         User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("Пользователь с email " + userEmail + " не найден в базе"));
 
         Playlist playlist = new Playlist();
         playlist.setName(name);

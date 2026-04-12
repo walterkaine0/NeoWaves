@@ -1,24 +1,46 @@
 {
   "name": "neowaves",
   "version": "1.0.0",
-  "description": "��#\u0000 \u0000N\u0000e\u0000o\u0000W\u0000a\u0000v\u0000e\u0000s\u0000\r\u0000 \u0000",
+  "description": "Waves Desktop Music Player",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "dist": "electron-builder"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/walterkaine0/NeoWaves.git"
+    "url": "git+https://github.com"
   },
   "keywords": [],
-  "author": "",
+  "author": "Walterkaine",
   "license": "ISC",
   "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/walterkaine0/NeoWaves/issues"
+  "build": {
+    "appId": "com.neowaves.desktop",
+    "productName": "Waves",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "artifactName": "Waves_Setup.exe"
+    },
+    "extraResources": [
+      {
+        "from": "build/libs/neo-waves-0.0.1-SNAPSHOT.jar",
+        "to": "neo-waves-0.0.1-SNAPSHOT.jar"
+      }
+    ],
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true
+    }
   },
-  "homepage": "https://github.com/walterkaine0/NeoWaves#readme",
   "devDependencies": {
-    "electron": "^41.2.0"
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
   }
 }

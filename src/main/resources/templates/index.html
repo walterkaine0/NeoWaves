@@ -248,11 +248,17 @@
         };
 
         window.handleLogout = () => {
-        auth.signOut().then(() => {
-            console.log("Вышли из аккаунта");
-            location.reload();
-        }).catch(err => console.error("Ошибка при выходе:", err));
-    };
+    console.log("Попытка выхода...");
+    firebase.auth().signOut()
+        .then(() => {
+            console.log("Firebase: Выход выполнен");
+            // Обязательно для Electron, чтобы сбросить состояние
+            window.location.reload();
+        })
+        .catch((error) => {
+            console.error("Ошибка при выходе:", error);
+        });
+};
 
         // Правильный вызов без скобок после auth
         auth.onAuthStateChanged(user => {
