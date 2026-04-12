@@ -100,7 +100,7 @@
 
     <!-- Право: Лайк -->
     <div style="width: 25%; display: flex; justify-content: flex-end;">
-        <button class="like-btn" onclick="handleLike()">❤</button>
+        <button id="like-btn" class="like-btn">❤</button>
     </div>
 </footer>
 
@@ -271,30 +271,31 @@
             }
         });
 
-        window.handleLike = () => {
-        const u = firebase.auth().currentUser;
-        if (!u) return alert("Войдите в аккаунт!");
-        const s = songs[currentIndex];
-        if (!s) return alert("Сначала выберите трек!");
+        window.handleLike = (songId) => {
+    // Если songId не пришел, не шлем запрос
+    if (!songId || songId === 'undefined') {
+        console.error("Ошибка: ID песни не определен!");
+        return;
+    }
 
-        const heartBtn = document.querySelector('.like-btn');
+    const email = "denizshkololo@gmail.com"; // Твоя почта
+    const url = `${API_BASE}/like/${songId}?userEmail=${encodeURIComponent(email)}`;
 
-        // Отправляем запрос на тот же эндпоинт
-        // Обычно в Spring Boot логика /like реализована как "переключатель":
-        // если лайка нет — добавляет, если есть — удаляет.
-        fetch(`/like/${s.id}?userEmail=${encodeURIComponent(u.email)}`, { method: 'POST' })
-            .then(r => r.text())
-            .then(message => {
-                console.log("Ответ сервера:", message);
-
-                // Переключаем класс: если был 'liked' — удалит, если не было — добавит
-                heartBtn.classList.toggle('liked');
-
-                // Опционально: выводим сообщение только если нужно
-                // alert(message);
-            })
-            .catch(err => console.error("Ошибка при переключении лайка:", err));
-    };
+    fetch(url, { method: 'POST' })
+        .then(r => r.text())
+        .then(msg => {
+            // Если в ответе пришел JSON с ошибкой (как на скрине), парсим его
+            try {
+                const data = JSON.parse(msg);
+                if (data.status === 400) window.showInfo("Ошибка запроса 🫧");
+                else window.showInfo(msg);
+            } catch(e) {
+                // Если пришел просто текст (например, "Added to Favorites")
+                window.showInfo(msg);
+            }
+        })
+        .catch(err => console.error("Ошибка лайка:", err));
+};
 
 
 
@@ -413,30 +414,49 @@ window.openPlaylist = (id) => {
         .then(r => r.json())
         .then(data => {
             if (data.length === 0) return window.showInfo("Плейлист пуст 🫧");
+
+            // Сохраняем песни в глобальный массив, чтобы плеер мог их играть
+            songs = data.map(s => ({
+                id: s.id,
+                title: s.title,
+                s3Url: s.s3Url,
+                // Достаем обложку из альбома
+                coverUrl: s.album ? s.album.coverUrl : '/img/default-cover.png',
+                // Достаем имя артиста из вложенного объекта
+                artist: (s.album && s.album.artist) ? s.album.artist.name : 'Unknown Artist'
+            }));
+
             const grid = document.getElementById('content-grid');
             grid.innerHTML = '';
-            data.forEach((s, index) => {
+
+            songs.forEach((s, index) => {
                 const card = document.createElement('div');
                 card.className = 'album-card';
-                card.style = "background: rgba(255, 255, 255, 0.05); border-radius: 20px; padding: 15px; cursor: pointer;";
+                card.style = "background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.2); border-radius: 20px; padding: 15px; transition: 0.3s; cursor: pointer; display: flex; flex-direction: column; justify-content: space-between;";
+
                 card.innerHTML = `
-                    <div onclick="playSpecific(${index})">
-                        <img src="${s.coverUrl || ''}" style="width: 100%; border-radius: 15px; margin-bottom: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);">
-                        <h4 style="font-size: 16px; color: white;">${s.title}</h4>
-                        <p style="font-size: 12px; opacity: 0.6; color: white;">${s.artist || 'Unknown'}</p>
+                    <div onclick="playSpecific(${index})" style="text-align: center;">
+                        <img src="${s.coverUrl}"
+                             style="width: 100%; border-radius: 15px; margin-bottom: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.3);"
+                             onerror="this.src='/img/default-cover.png'">
+                        <h4 style="margin-bottom: 5px; font-size: 16px; color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.5); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${s.title}</h4>
+                        <p style="font-size: 12px; opacity: 0.7; color: white; margin-bottom: 10px;">${s.artist}</p>
                     </div>
+
                     <button onclick="window.removeFromPlaylist(${id}, ${s.id})"
-                            style="width: 100%; margin-top: 10px; background: rgba(255,75,43,0.2); color: #ff4b2b;
-                                   border: 1px solid rgba(255,75,43,0.4); border-radius: 12px; padding: 6px;
-                                   font-size: 11px; cursor: pointer; transition: 0.3s;"
-                            onmouseover="this.style.background='rgba(255,75,43,0.4)'"
-                            onmouseout="this.style.background='rgba(255,75,43,0.2)'">
-                        🗑 Удалить из плейлиста
+                            style="width: 100%; background: linear-gradient(to bottom, rgba(255,75,43,0.3) 0%, rgba(255,0,0,0.2) 100%);
+                                   color: #ff4b2b; border: 1px solid rgba(255,75,43,0.5); border-radius: 12px;
+                                   padding: 8px; font-size: 11px; cursor: pointer; font-weight: 600;
+                                   transition: 0.3s; backdrop-filter: blur(5px);"
+                            onmouseover="this.style.background='rgba(255,75,43,0.5)'; this.style.color='white';"
+                            onmouseout="this.style.background='rgba(255,75,43,0.2)'; this.style.color='#ff4b2b';">
+                        🗑 Удалить
                     </button>
                 `;
                 grid.appendChild(card);
             });
-        });
+        })
+        .catch(err => console.error("Ошибка загрузки песен плейлиста:", err));
 };
 
 // 5. Уведомления и Модалки
@@ -486,8 +506,15 @@ document.getElementById('confirmTrackDeleteBtn').onclick = () => {
 
         window.handleLogin = () => console.log("Firebase инициализируется...");
         window.handleLogout = () => {};
-        window.handleLike = () => alert("Войдите в аккаунт");
-        window.handleCreatePlaylist = () => alert("Войдите в аккаунт");
+
+
+// Исправь вызов модалки создания плейлиста
+window.handleCreatePlaylist = () => {
+    const email = "denizshkololo@gmail.com";
+    if (!email) return window.showInfo("Войдите в аккаунт 🫧");
+
+    document.getElementById('playlistModal').style.display = 'flex';
+};
 
         if (songs.length > 0) loadTrack(0);
 
