@@ -62,11 +62,7 @@
                     </div>
 
                     <!-- Добавление в плейлист -->
-                    <select class="add-to-pl" th:onchange="|addToPlaylist(this.value, ${song.id})|">
-                        <option value="">+ В плейлист</option>
-                        <option th:each="pl : ${playlists}" th:if="${pl != null}"
-                                th:value="${pl.id}" th:text="${pl.name}"></option>
-                    </select>
+                    <div class="playlist-selector-container" data-song-id="${s.id}"></div>
                 </div>
             </div>
         </section>
@@ -369,18 +365,54 @@ window.confirmCreatePlaylist = () => {
         });
 };
 
-    function updateAllSelects() {
-    const selects = document.querySelectorAll('select[onchange*="addToPlaylist"]');
-    const optionsHtml = `<option value="" disabled selected>🫧 + В плейлист</option>` +
-        globalPlaylists.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+    window.updateAllSelects = () => {
+    const containers = document.querySelectorAll('.playlist-selector-container');
 
-    selects.forEach(select => {
-        select.innerHTML = optionsHtml;
-        select.className = 'aero-select'; // ПРИМЕНЯЕМ НАШ СТИЛЬ
-        // Добавим немного отступа сверху
-        select.style.marginTop = "10px";
+    containers.forEach(container => {
+        const songId = container.dataset.songId;
+
+        // Генерируем пункты меню ПРЯМО ВНУТРИ цикла для каждого контейнера
+        const menuItemsHtml = globalPlaylists.map(p => {
+            // Передаем songId как явное числовое значение
+            return `<div class="dropdown-item" onclick="window.confirmAddToPlaylist(${p.id}, ${songId})">${p.name}</div>`;
+        }).join('');
+
+        container.innerHTML = `
+            <div class="custom-dropdown">
+                <div class="dropdown-selected" onclick="window.toggleDropdown(event, ${songId})">
+                    <span>🫧 + В плейлист</span>
+                    <span>▼</span>
+                </div>
+                <div class="dropdown-menu" id="menu-${songId}">
+                    ${menuItemsHtml}
+                </div>
+            </div>
+        `;
     });
-}
+};
+
+        window.toggleDropdown = (event, songId) => {
+        event.stopPropagation();
+        // Закрываем все открытые меню
+        document.querySelectorAll('.dropdown-menu').forEach(m => {
+            if (m.id !== `menu-${songId}`) m.style.display = 'none';
+        });
+
+        const menu = document.getElementById(`menu-${songId}`);
+        if (menu) {
+            menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+        }
+    };
+
+
+    window.confirmAddToPlaylist = (playlistId, songId) => {
+        console.log("Добавляем:", playlistId, "в трек:", songId);
+        if (typeof window.addToPlaylist === 'function') {
+            window.addToPlaylist(playlistId, songId);
+        }
+        // Скрываем меню после выбора
+        document.querySelectorAll('.dropdown-menu').forEach(m => m.style.display = 'none');
+    };
 
 // Вызывай это при загрузке
 window.onload = window.loadSidebar;
