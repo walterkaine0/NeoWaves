@@ -302,6 +302,7 @@
     const API_BASE = 'http://localhost:8081';
     let globalPlaylists = [];
     let songs = [];
+    let trackToDelete = { pId: null, sId: null };
 
 
 
@@ -310,33 +311,32 @@
         window.loadSidebar();
     };
 
-    // 2. Загрузка сайдбара и плейлистов
-    window.loadSidebar = () => {
-        const email = "denizshkololo@gmail.com";
-        fetch(`${API_BASE}/playlist/user?email=${encodeURIComponent(email)}`)
-            .then(res => res.json())
-            .then(data => {
-                globalPlaylists = data;
-                const container = document.getElementById('playlists-container');
-                if (container) {
-                    container.innerHTML = '';
-                    data.forEach(p => {
-                        const item = document.createElement('div');
-                        item.className = 'playlist-item';
-                        item.style = "display: flex; justify-content: space-between; align-items: center; cursor: pointer; padding: 5px 10px;";
-                        item.onclick = () => window.openPlaylist(p.id);
-                        item.innerHTML = `
-                            <span>${p.name}</span>
-                            <span onclick="window.handleDeletePlaylist(event, ${p.id})"
-                                  style="color: rgba(255,255,255,0.5); font-size: 18px; font-weight: bold; padding: 0 5px;">×</span>
-                        `;
-                        container.appendChild(item);
-                    });
-                }
-                window.updateAllSelects();
-            });
-    };
-
+    // 2. Сайдбар
+window.loadSidebar = () => {
+    const email = "denizshkololo@gmail.com";
+    fetch(`${API_BASE}/playlist/user?email=${encodeURIComponent(email)}`)
+        .then(res => res.json())
+        .then(data => {
+            globalPlaylists = data;
+            const container = document.getElementById('playlists-container');
+            if (container) {
+                container.innerHTML = '';
+                data.forEach(p => {
+                    const item = document.createElement('div');
+                    item.className = 'playlist-item';
+                    item.style = "display: flex; justify-content: space-between; align-items: center; cursor: pointer; padding: 5px 10px;";
+                    item.onclick = () => window.openPlaylist(p.id);
+                    item.innerHTML = `
+                        <span>${p.name}</span>
+                        <span onclick="window.handleDeletePlaylist(event, ${p.id})"
+                              style="color: rgba(255,255,255,0.5); font-size: 18px; font-weight: bold; padding: 0 5px;">×</span>
+                    `;
+                    container.appendChild(item);
+                });
+            }
+            window.updateAllSelects();
+        });
+};
 
     window.handleCreatePlaylist = () => {
         document.getElementById('playlistModal').style.display = 'flex';
@@ -360,23 +360,20 @@
             });
     };
     // 3. Обновление ВЫПАДАЮЩИХ СПИСКОВ (Aero Style)
+// 3. Выпадающие списки (Aero)
 window.updateAllSelects = () => {
     const containers = document.querySelectorAll('.playlist-selector-container');
-
     containers.forEach(container => {
-        const songId = container.dataset.songId; // Получаем ID из атрибута
-        if (!songId) return;
-
-        const menuItemsHtml = globalPlaylists.map(p => {
-            // Здесь передаем два числа. Никаких ${} внутри onclick!
-            return `<div class="dropdown-item" onclick="window.confirmAddToPlaylist(${p.id}, ${songId})">${p.name}</div>`;
-        }).join('');
+        const songId = container.dataset.songId;
+        const menuItemsHtml = globalPlaylists.map(p =>
+            `<div class="dropdown-item" onclick="window.confirmAddToPlaylist(${p.id}, ${songId})">${p.name}</div>`
+        ).join('');
 
         container.innerHTML = `
             <div class="custom-dropdown">
                 <div class="dropdown-selected" onclick="window.toggleDropdown(event, ${songId})">
                     <span>🫧 + В плейлист</span>
-                    <span style="font-size: 10px; opacity: 0.7;">▼</span>
+                    <span>▼</span>
                 </div>
                 <div class="dropdown-menu" id="menu-${songId}">
                     ${menuItemsHtml}
@@ -387,85 +384,63 @@ window.updateAllSelects = () => {
 };
 
        // 4. Управление выпадающим списком
-    window.toggleDropdown = (event, songId) => {
-        event.stopPropagation();
-        document.querySelectorAll('.dropdown-menu').forEach(m => {
-            if (m.id !== `menu-${songId}`) m.style.display = 'none';
+window.toggleDropdown = (event, songId) => {
+    event.stopPropagation();
+    document.querySelectorAll('.dropdown-menu').forEach(m => {
+        if (m.id !== `menu-${songId}`) m.style.display = 'none';
+    });
+    const menu = document.getElementById(`menu-${songId}`);
+    if (menu) menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+};
+
+window.confirmAddToPlaylist = (playlistId, songId) => {
+    window.addToPlaylist(playlistId, songId);
+    document.querySelectorAll('.dropdown-menu').forEach(m => m.style.display = 'none');
+};
+
+
+window.addToPlaylist = (playlistId, songId) => {
+    fetch(`${API_BASE}/playlist/${playlistId}/add/${songId}`, { method: 'POST' })
+        .then(r => r.text())
+        .then(msg => window.showInfo(msg))
+        .catch(() => window.showInfo("Ошибка сети 🫧"));
+};
+
+
+    // 6. Открытие плейлиста
+window.openPlaylist = (id) => {
+    fetch(`${API_BASE}/playlist/${id}/songs`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.length === 0) return window.showInfo("Плейлист пуст 🫧");
+            const grid = document.getElementById('content-grid');
+            grid.innerHTML = '';
+            data.forEach((s, index) => {
+                const card = document.createElement('div');
+                card.className = 'album-card';
+                card.style = "background: rgba(255, 255, 255, 0.05); border-radius: 20px; padding: 15px; cursor: pointer;";
+                card.innerHTML = `
+                    <div onclick="playSpecific(${index})">
+                        <img src="${s.coverUrl || ''}" style="width: 100%; border-radius: 15px; margin-bottom: 10px;">
+                        <h4 style="font-size: 16px;">${s.title}</h4>
+                        <p style="font-size: 12px; opacity: 0.6;">${s.artist || 'Unknown'}</p>
+                    </div>
+                    <button onclick="window.removeFromPlaylist(${id}, ${s.id})"
+                            style="width: 100%; margin-top: 10px; background: rgba(255,0,0,0.1); color: #ff4b2b; border: 1px solid rgba(255,75,43,0.3); border-radius: 10px; padding: 5px;">
+                        🗑 Удалить
+                    </button>
+                `;
+                grid.appendChild(card);
+            });
         });
-        const menu = document.getElementById(`menu-${songId}`);
-        if (menu) {
-            menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
-        }
-    };
+};
 
-    window.confirmAddToPlaylist = (playlistId, songId) => {
-        window.addToPlaylist(playlistId, songId);
-        document.querySelectorAll('.dropdown-menu').forEach(m => m.style.display = 'none');
-    };
-
-     // Исправь также window.addToPlaylist, чтобы использовать кастомный алерт
-    window.addToPlaylist = (playlistId, songId) => {
-        fetch(`${API_BASE}/playlist/${playlistId}/add/${songId}`, { method: 'POST' })
-            .then(r => r.text())
-            .then(msg => window.showInfo(msg)) // Красивое окно вместо alert
-            .catch(err => window.showInfo("Ошибка сети 🫧"));
-    };
-
-
-
-        window.openPlaylist = (id) => {
-        fetch(`${API_BASE}/playlist/${id}/songs`)
-            .then(r => r.json())
-            .then(data => {
-                if (data.length === 0) return alert("Плейлист пуст");
-
-                // 1. Обновляем глобальный список песен для плеера
-                songs = data.map(s => ({
-                    id: s.id,
-                    title: s.title,
-                    s3Url: s.s3Url,
-                    coverUrl: s.album?.coverUrl || '',
-                    artist: s.album?.artist?.name || 'Unknown'
-                }));
-
-                // 2. Очищаем сетку в центре экрана
-                const grid = document.getElementById('content-grid');
-                grid.innerHTML = '';
-
-                // 3. Рисуем новые карточки
-                songs.forEach((s, index) => {
-                    const card = document.createElement('div');
-                    card.className = 'album-card';
-                    // Копируем стили из твоего Thymeleaf-шаблона
-                    card.style = "background: rgba(255, 255, 255, 0.05); border-radius: 20px; padding: 15px; transition: 0.3s; cursor: pointer;";
-
-                    card.innerHTML = `
-                        <div onclick="playSpecific(${index})">
-                            <img src="${s.coverUrl}" style="width: 100%; border-radius: 15px; margin-bottom: 10px; box-shadow: 0 8px 20px rgba(0,0,0,0.3);">
-                            <h4 style="margin-bottom: 5px; font-size: 16px;">${s.title}</h4>
-                            <p style="font-size: 12px; opacity: 0.6;">${s.artist}</p>
-                        </div>
-                        <button onclick="removeFromPlaylist(${id}, ${s.id})"
-                                style="width: 100%; margin-top: 10px; background: rgba(255,0,0,0.1); color: #ff4b2b; border: 1px solid rgba(255,75,43,0.3); border-radius: 10px; padding: 5px; font-size: 11px; cursor: pointer;">
-                            🗑 Удалить
-                        </button>
-                    `;
-                    grid.appendChild(card);
-                });
-
-                console.log("Интерфейс обновлен треками из плейлиста");
-            })
-            .catch(err => console.error("Ошибка загрузки плейлиста:", err));
-    };
-
-    // Функция вызова кастомного алерта
-    window.showInfo = (text) => {
-        document.getElementById('infoModalText').innerText = text;
-        document.getElementById('infoModal').style.display = 'flex';
-    };
-    window.closeInfoModal = () => document.getElementById('infoModal').style.display = 'none';
-
-    let trackToDelete = { pId: null, sId: null };
+// 5. Уведомления и Модалки
+window.showInfo = (text) => {
+    document.getElementById('infoModalText').innerText = text;
+    document.getElementById('infoModal').style.display = 'flex';
+};
+window.closeInfoModal = () => document.getElementById('infoModal').style.display = 'none';
 
     // Открытие модалки удаления трека
     window.removeFromPlaylist = (playlistId, songId) => {
@@ -473,74 +448,38 @@ window.updateAllSelects = () => {
         document.getElementById('deleteTrackModal').style.display = 'flex';
     };
 
-    window.closeTrackModal = () => document.getElementById('deleteTrackModal').style.display = 'none';
-
-    window.handleDeletePlaylist = (event, id) => {
-        event.stopPropagation();
-        playlistIdToDelete = id;
-
-        const modal = document.getElementById('deleteModal');
-        const confirmBtn = document.getElementById('confirmDeleteBtn');
-
-        if (modal && confirmBtn) {
-            modal.style.display = 'flex';
-
-            // Привязываем действие прямо здесь
-            confirmBtn.onclick = () => {
-                if (!playlistIdToDelete) return;
-
-                fetch(`${API_BASE}/playlist/delete/${playlistIdToDelete}`, { method: 'POST' })
-                    .then(r => {
-                        if (r.ok) {
-                            window.closeDeleteModal();
-                            location.reload();
-                        } else {
-                            // Если это "Избранное", сервер вернет ошибку, и мы ее покажем
-                            r.text().then(text => alert(text));
-                            window.closeDeleteModal();
-                        }
-                    })
-                    .catch(err => console.error("Ошибка при удалении:", err));
-            };
-        }
-    };
-
-    window.closeDeleteModal = () => {
-        const modal = document.getElementById('deleteModal');
-        if (modal) modal.style.display = 'none';
-        playlistIdToDelete = null;
-    };
 
 
-    window.removeFromPlaylist = (playlistId, songId) => {
-    if(!confirm("Удалить этот трек из плейлиста?")) return;
-
-    fetch(`${API_BASE}/playlist/${playlistId}/remove/${songId}`, { method: 'POST' })
-        .then(r => r.text())
-        .then(msg => {
-            console.log(msg);
-            openPlaylist(playlistId); // Обновляем вид плейлиста
-        })
-        .catch(err => alert("Ошибка при удалении"));
+    // Удаление плейлиста
+let playlistIdToDelete = null;
+window.handleDeletePlaylist = (event, id) => {
+    event.stopPropagation();
+    playlistIdToDelete = id;
+    document.getElementById('deleteModal').style.display = 'flex';
 };
 
-    // Логика кнопки "Удалить" в модалке
-    document.getElementById('confirmTrackDeleteBtn').onclick = () => {
-        const { pId, sId } = trackToDelete;
-        if (!pId || !sId) return;
+window.closeDeleteModal = () => { document.getElementById('deleteModal').style.display = 'none'; };
+document.getElementById('confirmDeleteBtn').onclick = () => {
+    fetch(`${API_BASE}/playlist/delete/${playlistIdToDelete}`, { method: 'POST' })
+        .then(r => r.ok ? location.reload() : window.showInfo("Нельзя удалить Избранное 🫧"));
+};
 
-        fetch(`${API_BASE}/playlist/${pId}/remove/${sId}`, { method: 'POST' })
-            .then(r => {
-                if (r.ok) {
-                    closeTrackModal();
-                    // ВАЖНО: Вместо reload() вызываем перерисовку плейлиста
-                    window.openPlaylist(pId);
-                } else {
-                    window.showInfo("Ошибка при удалении трека 🫧");
-                }
-            })
-            .catch(err => console.error("Ошибка:", err));
-    };
+// Удаление ТРЕКА из плейлиста
+window.removeFromPlaylist = (playlistId, songId) => {
+    trackToDelete = { pId: playlistId, sId: songId };
+    document.getElementById('deleteTrackModal').style.display = 'flex';
+};
+window.closeTrackModal = () => document.getElementById('deleteTrackModal').style.display = 'none';
+document.getElementById('confirmTrackDeleteBtn').onclick = () => {
+    const { pId, sId } = trackToDelete;
+    fetch(`${API_BASE}/playlist/${pId}/remove/${sId}`, { method: 'POST' })
+        .then(r => {
+            if (r.ok) {
+                closeTrackModal();
+                window.openPlaylist(pId); // Обновляем мгновенно
+            }
+        });
+};
 
     document.addEventListener('click', () => {
     document.querySelectorAll('.dropdown-menu').forEach(m => m.style.display = 'none');
