@@ -403,16 +403,12 @@ window.updateAllSelects = () => {
         document.querySelectorAll('.dropdown-menu').forEach(m => m.style.display = 'none');
     };
 
-     window.addToPlaylist = (playlistId, songId) => {
-        if (!playlistId) return;
-
+     // Исправь также window.addToPlaylist, чтобы использовать кастомный алерт
+    window.addToPlaylist = (playlistId, songId) => {
         fetch(`${API_BASE}/playlist/${playlistId}/add/${songId}`, { method: 'POST' })
             .then(r => r.text())
-            .then(msg => {
-                console.log(msg);
-                // Вместо alert можно сделать временное уведомление на экране
-            })
-            .catch(err => console.error("Ошибка добавления:", err));
+            .then(msg => window.showInfo(msg)) // Красивое окно вместо alert
+            .catch(err => window.showInfo("Ошибка сети 🫧"));
     };
 
 
@@ -461,12 +457,23 @@ window.updateAllSelects = () => {
             })
             .catch(err => console.error("Ошибка загрузки плейлиста:", err));
     };
-        window.removeFromPlaylist = (playlistId, songId) => {
-        if(!confirm("Удалить трек из этого плейлиста?")) return;
-        fetch(`${API_BASE}/playlist/${playlistId}/remove/${songId}`, { method: 'POST' })
-            .then(r => r.ok ? window.openPlaylist(playlistId) : alert("Ошибка при удалении"));
+
+    // Функция вызова кастомного алерта
+    window.showInfo = (text) => {
+        document.getElementById('infoModalText').innerText = text;
+        document.getElementById('infoModal').style.display = 'flex';
     };
-    });
+    window.closeInfoModal = () => document.getElementById('infoModal').style.display = 'none';
+
+    let trackToDelete = { pId: null, sId: null };
+
+    // Открытие модалки удаления трека
+    window.removeFromPlaylist = (playlistId, songId) => {
+        trackToDelete = { pId: playlistId, sId: songId };
+        document.getElementById('deleteTrackModal').style.display = 'flex';
+    };
+
+    window.closeTrackModal = () => document.getElementById('deleteTrackModal').style.display = 'none';
 
     window.handleDeletePlaylist = (event, id) => {
         event.stopPropagation();
@@ -516,6 +523,24 @@ window.updateAllSelects = () => {
         })
         .catch(err => alert("Ошибка при удалении"));
 };
+
+    // Логика кнопки "Удалить" в модалке
+    document.getElementById('confirmTrackDeleteBtn').onclick = () => {
+        const { pId, sId } = trackToDelete;
+        if (!pId || !sId) return;
+
+        fetch(`${API_BASE}/playlist/${pId}/remove/${sId}`, { method: 'POST' })
+            .then(r => {
+                if (r.ok) {
+                    closeTrackModal();
+                    // ВАЖНО: Вместо reload() вызываем перерисовку плейлиста
+                    window.openPlaylist(pId);
+                } else {
+                    window.showInfo("Ошибка при удалении трека 🫧");
+                }
+            })
+            .catch(err => console.error("Ошибка:", err));
+    };
 
     document.addEventListener('click', () => {
     document.querySelectorAll('.dropdown-menu').forEach(m => m.style.display = 'none');
@@ -591,6 +616,26 @@ window.updateAllSelects = () => {
                 Удалить
             </button>
         </div>
+    </div>
+</div>
+
+<!-- Модалка удаления трека -->
+<div id="deleteTrackModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.1); backdrop-filter: blur(10px); z-index:9999; justify-content:center; align-items:center;">
+    <div style="background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 100%); border: 1px solid rgba(255,255,255,0.5); box-shadow: 0 8px 32px rgba(0,0,0,0.3); padding: 25px; border-radius: 25px; width: 350px; text-align: center;">
+        <h3 style="color: #fff; margin-bottom: 20px;">🫧 Удалить трек?</h3>
+        <p style="color: white; margin-bottom: 20px; font-size: 14px;">Убрать эту волну из плейлиста?</p>
+        <div style="display: flex; justify-content: space-around;">
+            <button onclick="closeTrackModal()" style="color: white; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); padding: 8px 20px; border-radius: 15px; cursor: pointer;">Отмена</button>
+            <button id="confirmTrackDeleteBtn" style="background: linear-gradient(to bottom, #ff4b2b 0%, #ff1f1f 100%); color: white; border: 1px solid #fff; padding: 10px 25px; border-radius: 20px; cursor: pointer; font-weight: bold;">Удалить</button>
+        </div>
+    </div>
+</div>
+
+<!-- Модалка-уведомление (вместо alert) -->
+<div id="infoModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.05); backdrop-filter: blur(5px); z-index:10000; justify-content:center; align-items:center;">
+    <div style="background: linear-gradient(135deg, rgba(120,220,255,0.4) 0%, rgba(255,255,255,0.1) 100%); border: 1px solid rgba(255,255,255,0.5); padding: 20px; border-radius: 20px; width: 300px; text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
+        <p id="infoModalText" style="color: white; margin-bottom: 20px; font-weight: 500;"></p>
+        <button onclick="closeInfoModal()" style="background: white; color: #1db954; border: none; padding: 8px 25px; border-radius: 20px; cursor: pointer; font-weight: bold;">ОК</button>
     </div>
 </div>
 
