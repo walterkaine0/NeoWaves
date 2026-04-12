@@ -312,52 +312,52 @@
     };
 
 
-        window.handleCreatePlaylist = () => {
+    const API_BASE = 'http://localhost:8081';
+    const USER_EMAIL = "denizshkololo@gmail.com"; // Временно жестко, пока не настроишь динамику
+
+    // 1. Создание плейлиста (исправлено под @RequestParam)
+    window.handleCreatePlaylist = () => {
         const n = prompt("Название плейлиста:");
         if (!n) return;
 
-        // ВАЖНО: Твой Java-код ждет параметры name и userEmail в строке запроса
-        const email = "denizshkololo@gmail.com"; // Позже заменишь на динамический
-        const url = `${API_BASE}/playlist/create?name=${encodeURIComponent(n)}&userEmail=${encodeURIComponent(email)}`;
+        // Параметры идут после знака ?, а не в body
+        const url = `${API_BASE}/playlist/create?name=${encodeURIComponent(n)}&userEmail=${encodeURIComponent(USER_EMAIL)}`;
 
         fetch(url, { method: 'POST' })
             .then(r => {
                 if (r.ok) {
-                    location.reload(); // Перезагружаем, чтобы плейлист появился слева
+                    alert("Плейлист создан!");
+                    location.reload();
                 } else {
-                    alert("Ошибка сервера при создании");
+                    alert("Ошибка сервера");
                 }
             })
-            .catch(err => console.error("Ошибка сети:", err));
+            .catch(err => console.error("Сеть упала:", err));
     };
 
-    // Функция, которая отрисовывает плейлисты в левой панели
-    window.refreshSidebar = () => {
-        const email = "denizshkololo@gmail.com"; // Твоя почта из консоли
-        console.log("Загружаю плейлисты для:", email);
+    window.loadSidebar = () => {
+    const email = "denizshkololo@gmail.com"; // Почта из твоего браузера
 
-        fetch(`${API_BASE}/playlist/user/${email}`)
-            .then(r => r.json())
-            .then(data => {
-                const container = document.querySelector('.playlists-container') || document.querySelector('.space-y-2');
-                if (!container) return console.error("Контейнер плейлистов не найден!");
-
-                container.innerHTML = ''; // Очищаем
+    fetch(`${API_BASE}/playlist/user?email=${encodeURIComponent(email)}`)
+        .then(res => res.json())
+        .then(data => {
+            console.log("Плейлисты получены:", data);
+            // Найди ID или класс контейнера в своем index.html, куда вставляются плейлисты
+            const container = document.getElementById('playlists-container');
+            if (container) {
+                container.innerHTML = ''; // Чистим
                 data.forEach(p => {
-                    const el = document.createElement('div');
-                    el.className = "cursor-pointer hover:text-white transition"; // Стили Tailwind
-                    el.innerText = p.name;
-                    el.onclick = () => window.openPlaylist(p.id);
-                    container.appendChild(el);
+                    container.innerHTML += `<div onclick="openPlaylist(${p.id})" class="playlist-item">${p.name}</div>`;
                 });
-            })
-            .catch(err => console.error("Ошибка загрузки сайдбара:", err));
-    };
+            }
+        });
+};
 
-    // Запуск при старте
-    window.onload = () => {
-        window.refreshSidebar();
-    };
+// Вызывай это при загрузке
+window.onload = window.loadSidebar;
+
+
+
 
         window.openPlaylist = (id) => {
         fetch(`${API_BASE}/playlist/${id}/songs`)

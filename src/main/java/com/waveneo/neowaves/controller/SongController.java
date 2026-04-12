@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 
+@CrossOrigin(origins = "*") // Добавь это обязательно!
 @Controller
 public class SongController {
 
@@ -109,10 +110,10 @@ public class SongController {
         return "Уже в плейлисте";
     }
 
-    @GetMapping("/playlist/user/{email}")
+    @GetMapping("/playlist/user") // Убрали {email} из пути
     @ResponseBody
-    public List<Playlist> getUserPlaylists(@PathVariable String email) {
-        return playlistRepository.findByUserEmail(email); // Примерный метод репозитория
+    public List<Playlist> getUserPlaylists(@RequestParam String email) {
+        return playlistRepository.findByUserEmail(email);
     }
 
     @PostMapping("/playlist/create")
