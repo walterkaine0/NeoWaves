@@ -30,16 +30,14 @@
 
         <div style="margin-top: 30px;">
             <p style="font-size: 11px; opacity: 0.5; font-weight: bold; margin-bottom: 15px; letter-spacing: 1px;">ПЛЕЙЛИСТЫ</p>
+            <!-- Оставляем только пустой контейнер с ID -->
             <div id="playlists-container" style="display: flex; flex-direction: column; gap: 8px;">
-                <!-- Твоя рабочая логика из nonstab -->
-                <div th:each="pl : ${playlists}" class="playlist-item"
-                     th:onclick="|openPlaylist(${pl.id})|"
-                     style="padding: 8px 12px; border-radius: 10px; background: rgba(255,255,255,0.05); cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: 0.3s;">
-                    <span th:text="${pl.name == 'Favorites' ? '💎 ' + pl.name : '💿 ' + pl.name}"></span>
-                    <button th:if="${pl.name != 'Favorites'}" th:onclick="|handleDeletePlaylist(${pl.id})|" style="background:none; border:none; color:rgba(255,255,255,0.3); cursor:pointer;">×</button>
+                <!-- Сюда JS будет вставлять плейлисты -->
+                <div th:each="pl : ${playlists}" class="playlist-item">
+                    <span th:text="${pl.name}"></span>
                 </div>
             </div>
-            <button onclick="handleCreatePlaylist()" style="width: 100%; margin-top: 15px; padding: 10px; border-radius: 20px; border: none; background: white; color: #0072ff; font-weight: bold; cursor: pointer;">+ Создать</button>
+            <button id="create-playlist-btn" onclick="handleCreatePlaylist()" style="display: none; width: 100%; margin-top: 15px; padding: 10px; border-radius: 20px; border: none; background: white; color: #0072ff; font-weight: bold; cursor: pointer;">+ Создать</button>
         </div>
     </aside>
 
@@ -247,64 +245,85 @@
             else { audio.pause(); document.getElementById('play-btn').innerText = "▶"; }
         };
 
+        window.loadUserPlaylists = (email) => {
+            const container = document.getElementById('playlists-container');
+            if (!container) return;
+
+            fetch(`/playlist/user?email=${encodeURIComponent(email)}`)
+                .then(res => res.json())
+                .then(playlists => {
+                    container.innerHTML = ''; // Очищаем старое
+                    playlists.forEach(pl => {
+                        const item = document.createElement('div');
+                        item.className = 'playlist-item';
+                        item.style = 'padding: 8px 12px; border-radius: 10px; background: rgba(255,255,255,0.05); cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: 0.3s; margin-bottom: 8px;';
+
+                        const isFavorites = pl.name.toLowerCase() === 'favorites';
+                        const icon = isFavorites ? '💎 ' : '💿 ';
+
+                        item.innerHTML = `
+                            <span>${icon}${pl.name}</span>
+                            ${!isFavorites ? `<button onclick="event.stopPropagation(); handleDeletePlaylist(${pl.id})" style="background:none; border:none; color:rgba(255,255,255,0.3); cursor:pointer; font-size: 18px;">×</button>` : ''}
+                        `;
+
+                        item.onclick = () => window.openPlaylist(pl.id);
+                        container.appendChild(item);
+                    });
+                })
+                .catch(err => console.error("Ошибка загрузки плейлистов:", err));
+        };
+
         window.handleLogout = () => {
     firebase.auth().signOut().then(() => {
-        console.log("Вышли из Firebase");
-        // Перенаправляем на чистый адрес без параметров
+        // Очищаем адресную строку, чтобы сервер не прислал старые данные
         window.location.href = window.location.origin + window.location.pathname;
     }).catch(err => console.error(err));
 };
 
+firebase.auth().onAuthStateChanged(user => {
+    const loginBtn = document.getElementById('login-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    const userName = document.getElementById('user-name');
+    const container = document.getElementById('playlists-container');
+    const createBtn = document.getElementById('create-playlist-btn');
 
-        // 2. Мониторинг состояния пользователя
-         firebase.auth().onAuthStateChanged(user => {
-            const loginBtn = document.getElementById('login-btn');
-            const logoutBtn = document.getElementById('logout-btn');
-            const userName = document.getElementById('user-name');
+    const urlParams = new URLSearchParams(window.location.search);
+    const emailInUrl = urlParams.get('userEmail');
 
-            // Получаем email из текущего URL
-            const urlParams = new URLSearchParams(window.location.search);
-            const emailInUrl = urlParams.get('userEmail');
+    if (user) {
+        // Если вошли, но URL пустой — обновляем страницу с email
+        if (emailInUrl !== user.email) {
+            window.location.href = "/?userEmail=" + encodeURIComponent(user.email);
+            return;
+        }
 
-            if (user) {
-                console.log("Пользователь вошел:", user.email);
+        if (loginBtn) loginBtn.style.setProperty('display', 'none', 'important');
+        if (logoutBtn) logoutBtn.style.setProperty('display', 'block', 'important');
+        if (userName) userName.innerText = user.displayName || user.email;
+        if (createBtn) createBtn.style.display = 'block';
 
-                // Если мы залогинены, но в URL нет нашего email или он чужой — перезагружаем с правильным
-                if (emailInUrl !== user.email) {
-                    window.location.href = "/?userEmail=" + encodeURIComponent(user.email);
-                    return; // Прерываем выполнение, так как страница сейчас перезагрузится
-                }
+        // Загружаем актуальные плейлисты через JS
+        if (window.loadUserPlaylists) window.loadUserPlaylists(user.email);
 
-                // Визуальное отображение
-                if (loginBtn) loginBtn.style.setProperty('display', 'none', 'important');
-                if (logoutBtn) logoutBtn.style.setProperty('display', 'block', 'important');
-                if (userName) userName.innerText = user.displayName || user.email;
+    } else {
+        // --- КРИТИЧЕСКАЯ ОЧИСТКА ПРИ ВЫХОДЕ ---
+        if (container) container.innerHTML = ''; // Стираем всё в сайдбаре
+        if (createBtn) createBtn.style.display = 'none';
+        if (userName) userName.innerText = '';
 
-                // Синхронизация сессии с бэкендом
-                user.getIdToken(true).then(idToken => {
-                    fetch('/api/auth/sync', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ token: idToken })
-                    }).then(res => {
-                        console.log("Сервер подтвердил сессию:", res.ok);
-                    });
-                });
+        // Прячем селекторы под карточками треков
+        document.querySelectorAll('.playlist-selector-container').forEach(el => el.innerHTML = '');
 
-            } else {
-                console.log("Пользователь не авторизован");
+        // Если в URL остался email — уходим на чистую главную
+        if (emailInUrl) {
+            window.location.href = "/";
+            return;
+        }
 
-                // Если пользователя НЕТ, а в URL остался email — очищаем адрес, чтобы скрыть плейлисты
-                if (emailInUrl) {
-                    window.location.href = "/";
-                    return;
-                }
-
-                if (loginBtn) loginBtn.style.setProperty('display', 'block', 'important');
-                if (logoutBtn) logoutBtn.style.setProperty('display', 'none', 'important');
-                if (userName) userName.innerText = '';
-            }
-        });
+        if (loginBtn) loginBtn.style.setProperty('display', 'block', 'important');
+        if (logoutBtn) logoutBtn.style.setProperty('display', 'none', 'important');
+    }
+});
 
         window.handleLike = () => {
     const u = firebase.auth().currentUser;
