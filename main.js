@@ -2,7 +2,7 @@ const { app, BrowserWindow } = require('electron');
 const path = require('path');
 
 function createWindow() {
-    // Создаем основное окно
+    // Создаем основное окн
     const win = new BrowserWindow({
         width: 1200,
         height: 800,
