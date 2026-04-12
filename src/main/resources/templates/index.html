@@ -421,13 +421,17 @@ window.openPlaylist = (id) => {
                 card.style = "background: rgba(255, 255, 255, 0.05); border-radius: 20px; padding: 15px; cursor: pointer;";
                 card.innerHTML = `
                     <div onclick="playSpecific(${index})">
-                        <img src="${s.coverUrl || ''}" style="width: 100%; border-radius: 15px; margin-bottom: 10px;">
-                        <h4 style="font-size: 16px;">${s.title}</h4>
-                        <p style="font-size: 12px; opacity: 0.6;">${s.artist || 'Unknown'}</p>
+                        <img src="${s.coverUrl || ''}" style="width: 100%; border-radius: 15px; margin-bottom: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);">
+                        <h4 style="font-size: 16px; color: white;">${s.title}</h4>
+                        <p style="font-size: 12px; opacity: 0.6; color: white;">${s.artist || 'Unknown'}</p>
                     </div>
                     <button onclick="window.removeFromPlaylist(${id}, ${s.id})"
-                            style="width: 100%; margin-top: 10px; background: rgba(255,0,0,0.1); color: #ff4b2b; border: 1px solid rgba(255,75,43,0.3); border-radius: 10px; padding: 5px;">
-                        🗑 Удалить
+                            style="width: 100%; margin-top: 10px; background: rgba(255,75,43,0.2); color: #ff4b2b;
+                                   border: 1px solid rgba(255,75,43,0.4); border-radius: 12px; padding: 6px;
+                                   font-size: 11px; cursor: pointer; transition: 0.3s;"
+                            onmouseover="this.style.background='rgba(255,75,43,0.4)'"
+                            onmouseout="this.style.background='rgba(255,75,43,0.2)'">
+                        🗑 Удалить из плейлиста
                     </button>
                 `;
                 grid.appendChild(card);
@@ -464,19 +468,6 @@ document.getElementById('confirmDeleteBtn').onclick = () => {
         .then(r => r.ok ? location.reload() : window.showInfo("Нельзя удалить Избранное 🫧"));
 };
 
-// Удаление ТРЕКА из плейлиста
- window.removeFromPlaylist = (playlistId, songId) => {
-        if(!confirm("Удалить этот трек из плейлиста?")) return;
-
-        fetch(`${API_BASE}/playlist/${playlistId}/remove/${songId}`, { method: 'POST' })
-            .then(r => r.text())
-            .then(msg => {
-                console.log(msg);
-                window.openPlaylist(playlistId); // Обновляем вид плейлиста
-            })
-            .catch(err => alert("Ошибка при удалении"));
-    };
-
 window.closeTrackModal = () => document.getElementById('deleteTrackModal').style.display = 'none';
 document.getElementById('confirmTrackDeleteBtn').onclick = () => {
     const { pId, sId } = trackToDelete;
@@ -500,7 +491,7 @@ document.getElementById('confirmTrackDeleteBtn').onclick = () => {
 
         if (songs.length > 0) loadTrack(0);
 
-
+    }); // <-- ВОТ ЭТОЙ СКОБКИ НЕ ХВАТАЛО, она закрывает DOMContentLoaded
 
 </script>
 
