@@ -465,10 +465,18 @@ document.getElementById('confirmDeleteBtn').onclick = () => {
 };
 
 // Удаление ТРЕКА из плейлиста
-window.removeFromPlaylist = (playlistId, songId) => {
-    trackToDelete = { pId: playlistId, sId: songId };
-    document.getElementById('deleteTrackModal').style.display = 'flex';
-};
+ window.removeFromPlaylist = (playlistId, songId) => {
+        if(!confirm("Удалить этот трек из плейлиста?")) return;
+
+        fetch(`${API_BASE}/playlist/${playlistId}/remove/${songId}`, { method: 'POST' })
+            .then(r => r.text())
+            .then(msg => {
+                console.log(msg);
+                window.openPlaylist(playlistId); // Обновляем вид плейлиста
+            })
+            .catch(err => alert("Ошибка при удалении"));
+    };
+
 window.closeTrackModal = () => document.getElementById('deleteTrackModal').style.display = 'none';
 document.getElementById('confirmTrackDeleteBtn').onclick = () => {
     const { pId, sId } = trackToDelete;
