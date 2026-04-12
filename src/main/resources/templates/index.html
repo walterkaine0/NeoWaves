@@ -6,6 +6,8 @@
     <title>Waves</title>
     <script src="https://tailwindcss.com"></script>
 
+    <link rel="stylesheet" href="https://cloudflare.com">
+
     <link rel="stylesheet" th:href="@{/css/style.css}">
 
 
@@ -99,8 +101,10 @@
     </div>
 
     <!-- Право: Лайк -->
-    <div style="width: 25%; display: flex; justify-content: flex-end;">
-        <button id="like-btn" class="like-btn"  onclick="handleLike()">❤</button>
+    <div style="width: 25%; display: flex; justify-content: flex-end; align-items: center;">
+        <div id="main-like-btn" class="like-btn" onclick="handleLike()" style="font-size: 30px; line-height: 1;">
+            ❤
+        </div>
     </div>
 </footer>
 
@@ -120,31 +124,31 @@
             });
             /*[/]*/
         /*[/]*/
-        let currentIndex = 0;
+        let currentIndex = null;
         const audio = document.getElementById('main-audio');
         const playBtn = document.getElementById('play-btn');
 
         // 2. Функции плеера
         function loadTrack(index) {
+    if (songs.length === 0) return;
+    const s = songs[index];
 
-        if (songs.length === 0) return;
-        const s = songs[index];
-        currentSongIndex = index;
+    currentIndex = index;
+    window.currentTrackId = s.id; // Ключевой момент для работы лайка
 
-        document.getElementById('track-title').innerText = s.title;
-        document.getElementById('artist-name').innerText = s.artist;
-        document.getElementById('mini-cover').style.backgroundImage = `url('${s.coverUrl}')`;
+    document.getElementById('track-title').innerText = s.title;
+    document.getElementById('artist-name').innerText = s.artist;
+    document.getElementById('mini-cover').style.backgroundImage = `url('${s.coverUrl}')`;
 
-        // Привязываем лайк к кнопке в футере (в плеере)
-        const heartBtn = document.querySelector('like-btn');
-        if (heartBtn) {
-            // Явно прописываем вызов функции с ID песни
-            heartBtn.onclick = () => window.handleLike(s.id);
-            heartBtn.classList.remove('liked');
-        }
-
-        audio.src = s.s3Url;
+    // Когда включаем новый трек, убираем красный цвет с кнопки
+    const heartBtn = document.getElementById('main-like-btn');
+    if (heartBtn) {
+        heartBtn.classList.remove('liked');
     }
+
+    audio.src = s.s3Url;
+}
+
 
         // Вызываем загрузку первого трека, если они есть
         if (songs.length > 0) { loadTrack(0); }
@@ -222,16 +226,20 @@
         };
 
         window.playSpecific = (index) => {
-            if (!songs[index]) return;
-            currentIndex = index;
-            const s = songs[index];
-            document.getElementById('track-title').innerText = s.title;
-            document.getElementById('artist-name').innerText = s.artist;
-            document.getElementById('mini-cover').style.backgroundImage = `url('${s.coverUrl}')`;
-            audio.src = s.s3Url;
-            audio.play();
-            document.getElementById('play-btn').innerText = "⏸";
-        };
+    if (!songs[index]) return;
+
+    currentIndex = index; // КРИТИЧЕСКИ ВАЖНО: теперь handleLike будет знать, какой трек выбран
+
+    const s = songs[index];
+    window.currentTrackId = s.id; // Для надежности сохраняем и ID
+
+    document.getElementById('track-title').innerText = s.title;
+    document.getElementById('artist-name').innerText = s.artist;
+    document.getElementById('mini-cover').style.backgroundImage = `url('${s.coverUrl}')`;
+    audio.src = s.s3Url;
+    audio.play();
+    document.getElementById('play-btn').innerText = "⏸";
+};
 
         window.togglePlay = () => {
             if (!audio.src && songs.length > 0) window.playSpecific(0);
@@ -279,29 +287,24 @@
         window.handleLike = () => {
     const u = firebase.auth().currentUser;
     if (!u) return alert("Войдите в аккаунт!");
-    const s = songs[currentIndex];
-    if (!s) return alert("Сначала выберите трек!");
 
-    const heartBtn = document.querySelector('.like-btn');
+    // Берем ID трека, который мы сохранили при нажатии Play
+    const trackId = window.currentTrackId;
+    if (!trackId) return alert("Сначала выберите трек!");
 
-    // Отправляем запрос на тот же эндпоинт
-    // Обычно в Spring Boot логика /like реализована как "переключатель":
-    // если лайка нет — добавляет, если есть — удаляет.
-    fetch(`/like/${s.id}?userEmail=${encodeURIComponent(u.email)}`, { method: 'POST' })
+    const heartBtn = document.getElementById('main-like-btn');
+
+    // Отправка на твой Spring Boot контроллер
+    fetch(`/like/${trackId}?userEmail=${encodeURIComponent(u.email)}`, { method: 'POST' })
         .then(r => r.text())
         .then(message => {
             console.log("Ответ сервера:", message);
 
-            // Переключаем класс: если был 'liked' — удалит, если не было — добавит
+            // Просто переключаем класс .liked из твоего CSS
             heartBtn.classList.toggle('liked');
-
-            // Опционально: выводим сообщение только если нужно
-            // alert(message);
         })
-        .catch(err => console.error("Ошибка при переключении лайка:", err));
+        .catch(err => console.error("Ошибка лайка:", err));
 };
-
-
 
     const API_BASE = 'http://localhost:8081';
     let globalPlaylists = [];
