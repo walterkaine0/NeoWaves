@@ -245,6 +245,8 @@
         }).catch(err => console.error("Ошибка при выходе:", err));
     };
 
+    let globalPlaylists = []; // Здесь будем хранить список для выпадающих меню
+
         // Правильный вызов без скобок после auth
         auth.onAuthStateChanged(user => {
             const loginBtn = document.getElementById('login-btn');
@@ -344,36 +346,41 @@ window.confirmCreatePlaylist = () => {
     fetch(`${API_BASE}/playlist/user?email=${encodeURIComponent(email)}`)
         .then(res => res.json())
         .then(data => {
-            console.log("Плейлисты получены:", data);
+            globalPlaylists = data; // Сохраняем для будущего использования
             const container = document.getElementById('playlists-container');
             if (container) {
                 container.innerHTML = '';
                 data.forEach(p => {
-                    // Создаем элемент плейлиста
                     const playlistItem = document.createElement('div');
                     playlistItem.className = 'playlist-item';
-                    // Стили для расположения названия и крестика
                     playlistItem.style = "display: flex; justify-content: space-between; align-items: center; cursor: pointer; padding: 5px 10px;";
-
-                    // Клик по самому элементу открывает плейлист
                     playlistItem.onclick = () => window.openPlaylist(p.id);
 
-                    // Внутренняя разметка: Имя + Кнопка удаления
                     playlistItem.innerHTML = `
                         <span>${p.name}</span>
                         <span onclick="window.handleDeletePlaylist(event, ${p.id})"
-                              style="color: rgba(255,255,255,0.5); font-size: 18px; font-weight: bold; padding: 0 5px; transition: 0.3s;"
-                              onmouseover="this.style.color='#ff4b2b'"
-                              onmouseout="this.style.color='rgba(255,255,255,0.5)'">
-                            ×
-                        </span>
+                              style="color: rgba(255,255,255,0.5); font-size: 18px; font-weight: bold; padding: 0 5px;">×</span>
                     `;
-
                     container.appendChild(playlistItem);
                 });
             }
+            // ВАЖНО: После загрузки данных обновляем все пустые селекторы на странице
+            updateAllSelects();
         });
 };
+
+    function updateAllSelects() {
+    const selects = document.querySelectorAll('select[onchange*="addToPlaylist"]');
+    const optionsHtml = `<option value="" disabled selected>🫧 + В плейлист</option>` +
+        globalPlaylists.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+
+    selects.forEach(select => {
+        select.innerHTML = optionsHtml;
+        select.className = 'aero-select'; // ПРИМЕНЯЕМ НАШ СТИЛЬ
+        // Добавим немного отступа сверху
+        select.style.marginTop = "10px";
+    });
+}
 
 // Вызывай это при загрузке
 window.onload = window.loadSidebar;
