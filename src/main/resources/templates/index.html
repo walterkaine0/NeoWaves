@@ -126,15 +126,20 @@
 
         // 2. Функции плеера
         function loadTrack(index) {
+
         if (songs.length === 0) return;
         const s = songs[index];
+        currentSongIndex = index;
+
         document.getElementById('track-title').innerText = s.title;
         document.getElementById('artist-name').innerText = s.artist;
         document.getElementById('mini-cover').style.backgroundImage = `url('${s.coverUrl}')`;
 
-        // СБРОС ЛАЙКА: при загрузке новой песни всегда делаем сердечко белым
-        const heartBtn = document.querySelector('.like-btn');
+        // Привязываем лайк к кнопке в футере (в плеере)
+        const heartBtn = document.querySelector('like-btn');
         if (heartBtn) {
+            // Явно прописываем вызов функции с ID песни
+            heartBtn.onclick = () => window.handleLike(s.id);
             heartBtn.classList.remove('liked');
         }
 
@@ -272,26 +277,16 @@
         });
 
         window.handleLike = (songId) => {
-    // Если songId не пришел, не шлем запрос
-    if (!songId || songId === 'undefined') {
-        console.error("Ошибка: ID песни не определен!");
-        return;
-    }
+    if (!songId) return console.warn("ID песни не найден");
 
-    const email = "denizshkololo@gmail.com"; // Твоя почта
-    const url = `${API_BASE}/like/${songId}?userEmail=${encodeURIComponent(email)}`;
-
-    fetch(url, { method: 'POST' })
+    const email = "denizshkololo@gmail.com";
+    fetch(`${API_BASE}/like/${songId}?userEmail=${encodeURIComponent(email)}`, { method: 'POST' })
         .then(r => r.text())
         .then(msg => {
-            // Если в ответе пришел JSON с ошибкой (как на скрине), парсим его
-            try {
-                const data = JSON.parse(msg);
-                if (data.status === 400) window.showInfo("Ошибка запроса 🫧");
-                else window.showInfo(msg);
-            } catch(e) {
-                // Если пришел просто текст (например, "Added to Favorites")
-                window.showInfo(msg);
+            window.showInfo(msg); // Показываем твое "стеклянное" окно
+            // Если нужно, красим сердечко
+            if (msg.includes("Added")) {
+                document.querySelector('like-btn').classList.add('liked');
             }
         })
         .catch(err => console.error("Ошибка лайка:", err));
