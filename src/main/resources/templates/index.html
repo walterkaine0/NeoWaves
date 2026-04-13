@@ -30,14 +30,14 @@
 
         <div style="margin-top: 30px;">
             <p style="font-size: 11px; opacity: 0.5; font-weight: bold; margin-bottom: 15px; letter-spacing: 1px;">ПЛЕЙЛИСТЫ</p>
-            <!-- Оставляем только пустой контейнер с ID -->
+            <!-- ПУСТОЙ КОНТЕЙНЕР БЕЗ th:each -->
             <div id="playlists-container" style="display: flex; flex-direction: column; gap: 8px;">
-                <!-- Сюда JS будет вставлять плейлисты -->
-                <div th:each="pl : ${playlists}" class="playlist-item">
-                    <span th:text="${pl.name}"></span>
-                </div>
+                <!-- ЗДЕСЬ ДОЛЖНО БЫТЬ ПУСТО. Удали весь код th:each и внутренние div -->
             </div>
-            <button id="create-playlist-btn" onclick="handleCreatePlaylist()" style="display: none; width: 100%; margin-top: 15px; padding: 10px; border-radius: 20px; border: none; background: white; color: #0072ff; font-weight: bold; cursor: pointer;">+ Создать</button>
+            <!-- Добавь ID кнопке, чтобы JS мог её прятать -->
+            <button id="create-playlist-btn" onclick="handleCreatePlaylist()" style="display: none; width: 100%; margin-top: 15px; padding: 10px; border-radius: 20px; border: none; background: white; color: #0072ff; font-weight: bold; cursor: pointer;">
+                + Создать
+            </button>
         </div>
     </aside>
 
@@ -62,7 +62,9 @@
                     </div>
 
                     <!-- Добавление в плейлист -->
+                    <!-- Контейнер для кнопок "+ В плейлист", тоже пустой -->
                     <div class="playlist-selector-container" th:attr="data-song-id=${song.id}"></div>
+
                 </div>
             </div>
         </section>
@@ -245,93 +247,128 @@
             else { audio.pause(); document.getElementById('play-btn').innerText = "▶"; }
         };
 
-        window.loadUserPlaylists = (email) => {
+         window.loadUserPlaylists = (email) => {
+        const container = document.getElementById('playlists-container');
+        if (!container) return;
+
+        fetch(`/playlist/user?email=${encodeURIComponent(email)}`)
+            .then(res => res.json())
+            .then(playlists => {
+                container.innerHTML = ''; // Чистим перед отрисовкой
+                playlists.forEach(pl => {
+                    const isFav = pl.name === 'Favorites';
+                    const div = document.createElement('div');
+                    div.className = 'playlist-item';
+                    div.style = "padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.05); cursor: pointer; display: flex; justify-content: space-between; align-items: center;";
+                    div.innerHTML = `
+                        <span>${isFav ? '💎' : '💿'} ${pl.name}</span>
+                        ${!isFav ? `<button onclick="event.stopPropagation(); handleDeletePlaylist(${pl.id})" style="color: grey; background: none; border: none;">×</button>` : ''}
+                    `;
+                    div.onclick = () => window.openPlaylist(pl.id);
+                    container.appendChild(div);
+                });
+            });
+    };
+
+        window.addSongToPlaylist = (playlistId, songId) => {
+        if (!playlistId) return;
+        fetch(`/playlist/${playlistId}/add/${songId}`, { method: 'POST' })
+            .then(res => res.text())
+            .then(msg => showModal(msg, "Плейлист"))
+            .catch(err => console.error("Ошибка добавления:", err));
+    };
+
+window.renderUserContent = (email) => {
+    fetch(`/playlist/user?email=${encodeURIComponent(email)}`)
+        .then(res => res.json())
+        .then(playlists => {
+            // 1. Сайдбар с крестиками
             const container = document.getElementById('playlists-container');
-            if (!container) return;
+            if (container) {
+                container.innerHTML = playlists.map(pl => {
+                    const isFav = pl.name.toLowerCase() === 'favorites';
+                    return `
+                        <div class="playlist-item" onclick="openPlaylist(${pl.id})"
+                             style="padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.05); cursor: pointer; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span>${isFav ? '💎' : '💿'} ${pl.name}</span>
+                            ${!isFav ? `<button onclick="event.stopPropagation(); handleDeletePlaylist(${pl.id})" style="background:none; border:none; color:rgba(255,255,255,0.4); cursor:pointer; font-size: 20px;">&times;</button>` : ''}
+                        </div>
+                    `;
+                }).join('');
+            }
 
-            fetch(`/playlist/user?email=${encodeURIComponent(email)}`)
-                .then(res => res.json())
-                .then(playlists => {
-                    container.innerHTML = ''; // Очищаем старое
-                    playlists.forEach(pl => {
-                        const item = document.createElement('div');
-                        item.className = 'playlist-item';
-                        item.style = 'padding: 8px 12px; border-radius: 10px; background: rgba(255,255,255,0.05); cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: 0.3s; margin-bottom: 8px;';
+            // 2. Глянцевые кастомные выпадающие списки под треками
+            document.querySelectorAll('.playlist-selector-container').forEach(div => {
+                const songId = div.getAttribute('data-song-id');
+                div.style.display = 'block';
 
-                        const isFavorites = pl.name.toLowerCase() === 'favorites';
-                        const icon = isFavorites ? '💎 ' : '💿 ';
-
-                        item.innerHTML = `
-                            <span>${icon}${pl.name}</span>
-                            ${!isFavorites ? `<button onclick="event.stopPropagation(); handleDeletePlaylist(${pl.id})" style="background:none; border:none; color:rgba(255,255,255,0.3); cursor:pointer; font-size: 18px;">×</button>` : ''}
-                        `;
-
-                        item.onclick = () => window.openPlaylist(pl.id);
-                        container.appendChild(item);
-                    });
-                })
-                .catch(err => console.error("Ошибка загрузки плейлистов:", err));
-        };
-
-        window.handleLogout = () => {
-    firebase.auth().signOut().then(() => {
-        // Очищаем адресную строку, чтобы сервер не прислал старые данные
-        window.location.href = window.location.origin + window.location.pathname;
-    }).catch(err => console.error(err));
+               div.innerHTML = `
+                    <div class="custom-dropdown">
+                        <div class="dropdown-selected" onclick="window.toggleDropdown(event, this)">
+                            + В плейлист <span>▼</span>
+                        </div>
+                        <div class="dropdown-menu" style="display: none; position: absolute; background: rgba(0,0,0,0.8); z-index: 1000; width: 100%;">
+                            ${playlists.map(pl => `
+                                <div class="dropdown-item" onclick="window.addSongToPlaylist(${pl.id}, ${songId}); this.parentElement.style.display='none'">
+                                    ${pl.name}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+        });
 };
 
+// --- 2. Мониторинг состояния (Вход / Выход) ---
 firebase.auth().onAuthStateChanged(user => {
     const loginBtn = document.getElementById('login-btn');
     const logoutBtn = document.getElementById('logout-btn');
-    const userName = document.getElementById('user-name');
-    const container = document.getElementById('playlists-container');
     const createBtn = document.getElementById('create-playlist-btn');
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const emailInUrl = urlParams.get('userEmail');
+    const container = document.getElementById('playlists-container');
+    const userName = document.getElementById('user-name');
 
     if (user) {
-        // Если вошли, но URL пустой — обновляем страницу с email
-        if (emailInUrl !== user.email) {
-            window.location.href = "/?userEmail=" + encodeURIComponent(user.email);
-            return;
-        }
-
-        if (loginBtn) loginBtn.style.setProperty('display', 'none', 'important');
-        if (logoutBtn) logoutBtn.style.setProperty('display', 'block', 'important');
-        if (userName) userName.innerText = user.displayName || user.email;
+        // ВОШЕЛ
+        if (loginBtn) loginBtn.style.display = 'none';
+        if (logoutBtn) logoutBtn.style.display = 'block';
         if (createBtn) createBtn.style.display = 'block';
+        if (userName) userName.innerText = user.displayName || user.email;
 
-        // Загружаем актуальные плейлисты через JS
-        if (window.loadUserPlaylists) window.loadUserPlaylists(user.email);
-
+        window.renderUserContent(user.email);
     } else {
-        // --- КРИТИЧЕСКАЯ ОЧИСТКА ПРИ ВЫХОДЕ ---
-        if (container) container.innerHTML = ''; // Стираем всё в сайдбаре
-        if (createBtn) createBtn.style.display = 'none';
-        if (userName) userName.innerText = '';
+        console.log("Очистка интерфейса...");
+        const container = document.getElementById('playlists-container'); // Проверь каждую букву
+        if (container) container.innerHTML = '';
 
-        // Прячем селекторы под карточками треков
-        document.querySelectorAll('.playlist-selector-container').forEach(el => el.innerHTML = '');
+        // Прячем всё остальное
+        document.querySelectorAll('.playlist-selector-container').forEach(el => {
+            el.innerHTML = '';
+            el.style.display = 'none';
+        });
 
-        // Если в URL остался email — уходим на чистую главную
-        if (emailInUrl) {
+        // Редирект для очистки URL
+        if (window.location.search.includes('userEmail')) {
             window.location.href = "/";
-            return;
         }
-
-        if (loginBtn) loginBtn.style.setProperty('display', 'block', 'important');
-        if (logoutBtn) logoutBtn.style.setProperty('display', 'none', 'important');
     }
 });
 
+        // --- 3. Функция выхода ---
+        window.handleLogout = () => {
+        firebase.auth().signOut().then(() => {
+            // Перенаправляем на чистый корень БЕЗ ?userEmail=...
+            window.location.href = "/";
+        });
+    };
+
         window.handleLike = () => {
     const u = firebase.auth().currentUser;
-    if (!u) return alert("Войдите в аккаунт!");
+    if (!u) return showModal("Войдите в аккаунт!");
 
     // Берем ID трека, который мы сохранили при нажатии Play
     const trackId = window.currentTrackId;
-    if (!trackId) return alert("Сначала выберите трек!");
+    if (!trackId) return showModal("Сначала выберите трек!");
 
     const heartBtn = document.getElementById('main-like-btn');
 
@@ -359,9 +396,20 @@ firebase.auth().onAuthStateChanged(user => {
         window.loadSidebar();
     };
 
-    // 2. Сайдбар
-window.loadSidebar = () => {
-    const email = "denizshkololo@gmail.com";
+    window.loadSidebar = () => {
+    // 1. Пытаемся получить текущего пользователя из Firebase
+    const user = firebase.auth().currentUser;
+
+    // 2. Если пользователя нет — очищаем сайдбар и выходим
+    if (!user) {
+        const container = document.getElementById('playlists-container');
+        if (container) container.innerHTML = '';
+        return;
+    }
+
+    // 3. Если пользователь есть — берем ЕГО email динамически
+    const email = user.email;
+
     fetch(`${API_BASE}/playlist/user?email=${encodeURIComponent(email)}`)
         .then(res => res.json())
         .then(data => {
@@ -370,14 +418,18 @@ window.loadSidebar = () => {
             if (container) {
                 container.innerHTML = '';
                 data.forEach(p => {
+                    const isFav = p.name === 'Favorites';
                     const item = document.createElement('div');
                     item.className = 'playlist-item';
                     item.style = "display: flex; justify-content: space-between; align-items: center; cursor: pointer; padding: 5px 10px;";
                     item.onclick = () => window.openPlaylist(p.id);
+
                     item.innerHTML = `
-                        <span>${p.name}</span>
-                        <span onclick="window.handleDeletePlaylist(event, ${p.id})"
-                              style="color: rgba(255,255,255,0.5); font-size: 18px; font-weight: bold; padding: 0 5px;">×</span>
+                        <span>${isFav ? '💎' : '💿'} ${p.name}</span>
+                        ${!isFav ? `
+                            <span onclick="window.handleDeletePlaylist(event, ${p.id})"
+                                  style="color: rgba(255,255,255,0.5); font-size: 18px; font-weight: bold; padding: 0 5px;">×</span>
+                        ` : ''}
                     `;
                     container.appendChild(item);
                 });
@@ -396,7 +448,7 @@ window.loadSidebar = () => {
 
     window.confirmCreatePlaylist = () => {
         const name = document.getElementById('newPlaylistName').value;
-        if (!name) return alert("Введите название!");
+        if (!name) return showModal("Введите название!");
 
         const email = "denizshkololo@gmail.com";
         fetch(`${API_BASE}/playlist/create?name=${encodeURIComponent(name)}&userEmail=${encodeURIComponent(email)}`, { method: 'POST' })
@@ -432,26 +484,29 @@ window.updateAllSelects = () => {
 };
 
        // 4. Управление выпадающим списком
-window.toggleDropdown = (event, songId) => {
-    event.stopPropagation();
+window.toggleDropdown = (event, element) => {
+    // 1. Останавливаем всплытие, чтобы меню не закрылось сразу
+    if (event) event.stopPropagation();
+
+    // 2. Находим контейнер ( custom-dropdown )
+    const container = element.closest('.custom-dropdown') || element.parentElement;
+    const menu = container.querySelector('.dropdown-menu');
+
+    if (!menu) return console.error("Меню не найдено");
+
+    // 3. Закрываем все остальные открытые списки
     document.querySelectorAll('.dropdown-menu').forEach(m => {
-        if (m.id !== `menu-${songId}`) m.style.display = 'none';
+        if (m !== menu) m.style.display = 'none';
     });
-    const menu = document.getElementById(`menu-${songId}`);
-    if (menu) menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+
+    // 4. Переключаем текущее меню
+    const isVisible = menu.style.display === 'block';
+    menu.style.display = isVisible ? 'none' : 'block';
 };
 
 window.confirmAddToPlaylist = (playlistId, songId) => {
     window.addToPlaylist(playlistId, songId);
     document.querySelectorAll('.dropdown-menu').forEach(m => m.style.display = 'none');
-};
-
-
-window.addToPlaylist = (playlistId, songId) => {
-    fetch(`${API_BASE}/playlist/${playlistId}/add/${songId}`, { method: 'POST' })
-        .then(r => r.text())
-        .then(msg => window.showInfo(msg))
-        .catch(() => window.showInfo("Ошибка сети 🫧"));
 };
 
 
@@ -506,13 +561,21 @@ window.openPlaylist = (id) => {
         .catch(err => console.error("Ошибка загрузки песен плейлиста:", err));
 };
 
-// 5. Уведомления и Модалки
-window.showInfo = (text) => {
-    document.getElementById('infoModalText').innerText = text;
-    document.getElementById('infoModal').style.display = 'flex';
+// Функция открытия модалки
+window.showModal = (message, title = "NeoWaves") => {
+    const modal = document.getElementById('universal-modal');
+    document.getElementById('modal-title').innerText = title;
+    document.getElementById('modal-message').innerText = message;
+    modal.style.display = 'flex';
 };
-window.closeInfoModal = () => document.getElementById('infoModal').style.display = 'none';
 
+// Функция закрытия
+window.closeModal = () => {
+    document.getElementById('universal-modal').style.display = 'none';
+};
+
+// Переопределяем стандартный alert (по желанию), чтобы старый код тоже стал красивым
+window.showModal = (msg) => window.showModal(msg);
     // Открытие модалки удаления трека
     window.removeFromPlaylist = (playlistId, songId) => {
         trackToDelete = { pId: playlistId, sId: songId };
@@ -647,6 +710,25 @@ window.handleCreatePlaylist = () => {
         <button onclick="closeInfoModal()" style="background: white; color: #1db954; border: none; padding: 8px 25px; border-radius: 20px; cursor: pointer; font-weight: bold;">ОК</button>
     </div>
 </div>
+
+<div id="universal-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(5px); z-index: 10000; align-items: center; justify-content: center;">
+    <div style="background: linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 100%); backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.5); border-radius: 20px; padding: 30px; width: 350px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.3); color: white; animation: modalFadeIn 0.3s ease;">
+        <h3 id="modal-title" style="margin-top: 0; font-size: 20px; text-shadow: 0 0 10px rgba(255,255,255,0.5);">NeoWaves</h3>
+        <p id="modal-message" style="margin: 20px 0; font-size: 15px; opacity: 0.9;"></p>
+        <div id="modal-footer" style="display: flex; gap: 10px; justify-content: center;">
+            <button onclick="closeModal()" style="background: white; color: #0072ff; border: none; padding: 10px 25px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: 0.3s;">OK</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes modalFadeIn {
+        from { opacity: 0; transform: scale(0.9); }
+        to { opacity: 1; transform: scale(1); }
+    }
+    #universal-modal button:hover { transform: scale(1.05); box-shadow: 0 0 15px rgba(255,255,255,0.5); }
+</style>
+
 
 </body>
 </html>
