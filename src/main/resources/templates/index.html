@@ -448,17 +448,23 @@ firebase.auth().onAuthStateChanged(user => {
 
     window.confirmCreatePlaylist = () => {
         const name = document.getElementById('newPlaylistName').value;
-        if (!name) return showModal("Введите название!");
+        const u = firebase.auth().currentUser;
+        if (!name) return alert("Введите название!");
+        if (!u) return alert("Войдите в аккаунт!");
 
-        const email = "denizshkololo@gmail.com";
-        fetch(`${API_BASE}/playlist/create?name=${encodeURIComponent(name)}&userEmail=${encodeURIComponent(email)}`, { method: 'POST' })
-            .then(r => {
-                if (r.ok) {
-                    closeModal();
-                    location.reload();
-                }
+        fetch(`/playlist/create?name=${encodeURIComponent(name)}&userEmail=${encodeURIComponent(u.email)}`, { method: 'POST' })
+            .then(res => res.text())
+            .then(msg => {
+                alert(msg); // Откроет твою infoModal
+                location.reload();
             });
+        closePlaylistModal();
     };
+
+    window.closePlaylistModal = () => {
+    document.getElementById('playlistModal').style.display = 'none';
+};
+
     // 3. Обновление ВЫПАДАЮЩИХ СПИСКОВ (Aero Style)
 // 3. Выпадающие списки (Aero)
 window.updateAllSelects = () => {
@@ -515,7 +521,7 @@ window.openPlaylist = (id) => {
     fetch(`${API_BASE}/playlist/${id}/songs`)
         .then(r => r.json())
         .then(data => {
-            if (data.length === 0) return window.showInfo("Плейлист пуст 🫧");
+            if (data.length === 0) return window.alert("Плейлист пуст 🫧");
 
             // Сохраняем песни в глобальный массив, чтобы плеер мог их играть
             songs = data.map(s => ({
@@ -586,16 +592,46 @@ window.showModal = (msg) => window.showModal(msg);
 
     // Удаление плейлиста
 let playlistIdToDelete = null;
-window.handleDeletePlaylist = (event, id) => {
-    event.stopPropagation();
-    playlistIdToDelete = id;
-    document.getElementById('deleteModal').style.display = 'flex';
+
+window.handleDeletePlaylist = (id) => {
+    const modal = document.getElementById('deleteModal');
+    const confirmBtn = document.getElementById('confirmDeleteBtn');
+    modal.style.display = 'flex';
+
+    // Привязываем ID к кнопке внутри модалки
+    confirmBtn.onclick = () => {
+        fetch(`/playlist/delete/${id}`, { method: 'POST' })
+            .then(res => {
+                if (res.ok) {
+                    alert("Плейлист удален");
+                    location.reload();
+                }
+            });
+        closeDeleteModal();
+    };
+};
+
+window.closeDeleteModal = () => {
+    document.getElementById('deleteModal').style.display = 'none';
 };
 
 window.closeDeleteModal = () => { document.getElementById('deleteModal').style.display = 'none'; };
 document.getElementById('confirmDeleteBtn').onclick = () => {
     fetch(`${API_BASE}/playlist/delete/${playlistIdToDelete}`, { method: 'POST' })
-        .then(r => r.ok ? location.reload() : window.showInfo("Нельзя удалить Избранное 🫧"));
+        .then(r => r.ok ? location.reload() : window.alert("Нельзя удалить Избранное 🫧"));
+};
+
+// --- Инфо-модалка (вместо системного alert) ---
+window.alert = (message) => {
+    const infoModal = document.getElementById('infoModal');
+    if (infoModal) {
+        document.getElementById('infoModalText').innerText = message;
+        infoModal.style.display = 'flex';
+    }
+};
+
+window.closeInfoModal = () => {
+    document.getElementById('infoModal').style.display = 'none';
 };
 
 window.closeTrackModal = () => document.getElementById('deleteTrackModal').style.display = 'none';
@@ -618,7 +654,7 @@ document.getElementById('confirmTrackDeleteBtn').onclick = () => {
 // Исправь вызов модалки создания плейлиста
 window.handleCreatePlaylist = () => {
     const email = "denizshkololo@gmail.com";
-    if (!email) return window.showInfo("Войдите в аккаунт 🫧");
+    if (!email) return window.alert("Войдите в аккаунт 🫧");
 
     document.getElementById('playlistModal').style.display = 'flex';
 };
@@ -644,7 +680,7 @@ window.handleCreatePlaylist = () => {
                       outline: none; box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);">
 
         <div style="display: flex; justify-content: space-around; align-items: center;">
-            <button onclick="closeModal()"
+            <button onclick="closePlaylistModal()"
                     style="color: white; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3);
                            padding: 8px 20px; border-radius: 15px; cursor: pointer; transition: 0.3s;">
                 Отмена
