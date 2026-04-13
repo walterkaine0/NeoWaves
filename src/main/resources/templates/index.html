@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Waves</title>
-    <script src="https://tailwindcss.com"></script>
-
-    <link rel="stylesheet" href="https://cloudflare.com">
 
     <link rel="stylesheet" th:href="@{/css/style.css}">
 
@@ -204,12 +201,12 @@
 
         const firebaseConfig = {
             apiKey: "AIzaSyDJhWJDrW-rN2a3zFp_hAL5EWFn5UT9B28",
-            authDomain: "neowaves-824c3.firebaseapp.com",
-            projectId: "neowaves-824c3",
-            storageBucket: "neowaves-824c3.firebasestorage.app",
-            messagingSenderId: "398266414799",
-            appId: "1:398266414799:web:f58c71fe879b531f8b29ba",
-            measurementId: "G-YS6MJR4KBX"
+              authDomain: "neowaves-824c3.firebaseapp.com",
+              projectId: "neowaves-824c3",
+              storageBucket: "neowaves-824c3.firebasestorage.app",
+              messagingSenderId: "398266414799",
+              appId: "1:398266414799:web:f58c71fe879b531f8b29ba",
+              measurementId: "G-YS6MJR4KBX"
         };
 
         if (!firebase.apps.length) {
@@ -217,13 +214,24 @@
         }
         const auth = firebase.auth();
 
+
+
             // 1. Функция входа
         window.handleLogin = () => {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithPopup(provider)
-                .then(result => console.log("LOGIN OK", result.user))
-                .catch(err => console.error("Ошибка входа:", err));
-        };
+    const provider = new firebase.auth.GoogleAuthProvider();
+    firebase.auth().signInWithPopup(provider)
+        .then((result) => {
+            console.log("Успешный вход:", result.user.email);
+            // Сразу перезагружаем страницу с email, чтобы Java отдала плейлисты
+            window.location.href = "/?userEmail=" + encodeURIComponent(result.user.email);
+        })
+        .catch((error) => {
+            console.error("Ошибка входа:", error);
+            // Если попап заблокирован, пробуем редирект как запасной вариант
+            firebase.auth().signInWithRedirect(provider);
+        });
+};
+
 
         window.playSpecific = (index) => {
     if (!songs[index]) return;
@@ -321,38 +329,80 @@ window.renderUserContent = (email) => {
 };
 
 // --- 2. Мониторинг состояния (Вход / Выход) ---
+// --- ФИНАЛЬНЫЙ МОНИТОРИНГ СОСТОЯНИЯ ---
 firebase.auth().onAuthStateChanged(user => {
     const loginBtn = document.getElementById('login-btn');
     const logoutBtn = document.getElementById('logout-btn');
+    const userName = document.getElementById('user-name');
     const createBtn = document.getElementById('create-playlist-btn');
     const container = document.getElementById('playlists-container');
-    const userName = document.getElementById('user-name');
+
+    // СНАЧАЛА объявляем переменную, чтобы не было ошибки ReferenceError
+    const urlParams = new URLSearchParams(window.location.search);
+    const emailInUrl = urlParams.get('userEmail');
 
     if (user) {
-        // ВОШЕЛ
-        if (loginBtn) loginBtn.style.display = 'none';
-        if (logoutBtn) logoutBtn.style.display = 'block';
-        if (createBtn) createBtn.style.display = 'block';
+        console.log("Пользователь вошел:", user.email);
+
+        // Синхронизация URL (чтобы Java отдавала данные в модель)
+        if (emailInUrl !== user.email) {
+            window.location.href = "/?userEmail=" + encodeURIComponent(user.email);
+            return;
+        }
+
+        // Показываем кнопки и имя
+        if (loginBtn) loginBtn.style.setProperty('display', 'none', 'important');
+        if (logoutBtn) logoutBtn.style.setProperty('display', 'block', 'important');
         if (userName) userName.innerText = user.displayName || user.email;
+        if (createBtn) createBtn.style.display = 'block';
 
-        window.renderUserContent(user.email);
-    } else {
-        console.log("Очистка интерфейса...");
-        const container = document.getElementById('playlists-container'); // Проверь каждую букву
-        if (container) container.innerHTML = '';
+        // ЗАПУСКАЕМ ОТРИСОВКУ КОНТЕНТА
+        // Вызываем твои функции для сайдбара и селекторов под треками
+        if (typeof window.loadSidebar === 'function') {
+            window.loadSidebar();
+        }
+        if (typeof window.updateAllSelects === 'function') {
+            window.updateAllSelects();
+        }
 
-        // Прячем всё остальное
-        document.querySelectorAll('.playlist-selector-container').forEach(el => {
-            el.innerHTML = '';
-            el.style.display = 'none';
+        // Синхронизируем сессию с бэкендом
+        user.getIdToken(true).then(idToken => {
+            fetch('/api/auth/sync', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    token: idToken,
+                    email: user.email,
+                    username: user.displayName || user.email.split('@')[0]
+                })
+            }).then(res => console.log("Сервер подтвердил сессию:", res.ok));
         });
 
-        // Редирект для очистки URL
-        if (window.location.search.includes('userEmail')) {
+    } else {
+        console.log("Пользователь не авторизован. Очистка...");
+
+        // Очищаем всё, чтобы данные не висели после выхода
+        if (container) container.innerHTML = '';
+        if (createBtn) createBtn.style.display = 'none';
+        if (userName) userName.innerText = '';
+
+        // Скрываем и очищаем выпадающие списки под треками
+        document.querySelectorAll('.playlist-selector-container').forEach(div => {
+            div.innerHTML = '';
+            div.style.display = 'none';
+        });
+
+        // Если в URL остался email после выхода — уходим на чистую главную
+        if (emailInUrl) {
             window.location.href = "/";
+            return;
         }
+
+        if (loginBtn) loginBtn.style.setProperty('display', 'block', 'important');
+        if (logoutBtn) logoutBtn.style.setProperty('display', 'none', 'important');
     }
 });
+
 
         // --- 3. Функция выхода ---
         window.handleLogout = () => {
@@ -465,19 +515,20 @@ firebase.auth().onAuthStateChanged(user => {
     document.getElementById('playlistModal').style.display = 'none';
 };
 
-    // 3. Обновление ВЫПАДАЮЩИХ СПИСКОВ (Aero Style)
-// 3. Выпадающие списки (Aero)
-window.updateAllSelects = () => {
+   window.updateAllSelects = () => {
     const containers = document.querySelectorAll('.playlist-selector-container');
     containers.forEach(container => {
         const songId = container.dataset.songId;
+
+        // Генерируем пункты меню
         const menuItemsHtml = globalPlaylists.map(p =>
             `<div class="dropdown-item" onclick="window.confirmAddToPlaylist(${p.id}, ${songId})">${p.name}</div>`
         ).join('');
 
+        // ИСПРАВЛЕНО: передаем 'this' вместо '${songId}'
         container.innerHTML = `
             <div class="custom-dropdown">
-                <div class="dropdown-selected" onclick="window.toggleDropdown(event, ${songId})">
+                <div class="dropdown-selected" onclick="window.toggleDropdown(event, this)">
                     <span>🫧 + В плейлист</span>
                     <span>▼</span>
                 </div>
@@ -491,23 +542,22 @@ window.updateAllSelects = () => {
 
        // 4. Управление выпадающим списком
 window.toggleDropdown = (event, element) => {
-    // 1. Останавливаем всплытие, чтобы меню не закрылось сразу
     if (event) event.stopPropagation();
 
-    // 2. Находим контейнер ( custom-dropdown )
-    const container = element.closest('.custom-dropdown') || element.parentElement;
-    const menu = container.querySelector('.dropdown-menu');
+    // Если вдруг пришло не то, пытаемся найти ближайший контейнер
+    const container = (element && element.parentElement) ? element.parentElement : null;
+    if (!container) return console.error("Контейнер не найден");
 
+    const menu = container.querySelector('.dropdown-menu');
     if (!menu) return console.error("Меню не найдено");
 
-    // 3. Закрываем все остальные открытые списки
+    // Закрываем другие
     document.querySelectorAll('.dropdown-menu').forEach(m => {
         if (m !== menu) m.style.display = 'none';
     });
 
-    // 4. Переключаем текущее меню
-    const isVisible = menu.style.display === 'block';
-    menu.style.display = isVisible ? 'none' : 'block';
+    // Переключаем текущее
+    menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
 };
 
 window.confirmAddToPlaylist = (playlistId, songId) => {

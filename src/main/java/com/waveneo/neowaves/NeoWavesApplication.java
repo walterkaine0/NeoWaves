@@ -13,3 +13,4 @@ public class NeoWavesApplication {
 }
 
 //для запуска десктопа зайти в терминал и ввести: npm start
+//чтобы порты не занимал: taskkill /F /IM java.exe

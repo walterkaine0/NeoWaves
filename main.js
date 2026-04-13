@@ -15,15 +15,18 @@ function createWindow() {
         // Путь к иконке (убедись, что файл существует по этому пути)
         icon: path.join(__dirname, 'src/main/resources/static/favicon.ico'),
         webPreferences: {
-            partition: 'persist:google-session',
-            nodeIntegration: false,
-            contextIsolation: false,
-            webSecurity: false
-        }
+                    partition: 'persist:google-session',
+                    nodeIntegration: false,
+                    contextIsolation: false, // Оставляем false, чтобы работали твои скрипты
+                    webSecurity: false,
+                    // ДОБАВЬ ЭТИ СТРОКИ:
+                    nativeWindowOpen: true,
+                    allowRunningInsecureContent: true
+                }
     });
 
     // Маскируемся под обычный браузер для корректной работы Google Auth
-    win.webContents.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+    win.webContents.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36");
 
     // Загружаем адрес твоего Spring Boot сервера
     win.loadURL('http://localhost:8081');
@@ -63,9 +66,11 @@ app.whenReady().then(() => {
     });
 
     // Ждем 5 секунд, чтобы Spring Boot успел инициализировать БД и подняться
+    // Замени 5000 на 15000
     setTimeout(() => {
         createWindow();
-    }, 5000);
+    }, 15000);
+
 
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) createWindow();
