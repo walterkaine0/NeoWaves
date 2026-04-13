@@ -28,14 +28,12 @@ public class AuthController {
             String email = data.get("email");
             String username = data.get("username");
 
-            // Ищем пользователя или создаем нового
             userRepository.findByEmail(email).orElseGet(() -> {
                 User newUser = new User();
                 newUser.setEmail(email);
                 newUser.setUsername(username);
                 User savedUser = userRepository.save(newUser);
 
-                // Создаем "Favorites" сразу при регистрации
                 Playlist favs = new Playlist();
                 favs.setName("Favorites");
                 favs.setUser(savedUser);
@@ -45,12 +43,10 @@ public class AuthController {
                 return savedUser;
             });
 
-            // Возвращаем JSON объект
             return ResponseEntity.ok(Map.of("status", "success", "userEmail", email));
 
         } catch (Exception e) {
             e.printStackTrace();
-            // Возвращаем ошибку тоже в виде Map (JSON)
             return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
         }
     }

@@ -1,4 +1,4 @@
-/* Главный контейнер (сетка приложения) */
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
@@ -23,21 +23,21 @@ body {
 
 .app-container {
     display: grid;
-    grid-template-columns: 260px 1fr; /* Сайдбар 260px, остальное — контент */
+    grid-template-columns: 260px 1fr;
     grid-template-rows: 1fr 90px;
     height: 100vh;
 }
 
 .main-content {
-    grid-column: 2; /* Четко во вторую колонку */
+    grid-column: 2;
     overflow-y: auto;
     padding: 40px;
-    overflow-y: auto !important; /* Разрешаем вертикальный скролл */
-    height: calc(100vh - 90px); /* Ограничиваем высоту до начала плеера */
+    overflow-y: auto !important;
+    height: calc(100vh - 90px);
 }
 
 .sidebar {
-    /* УДАЛИ position: fixed! */
+
     background: rgba(255, 255, 255, 0.05);
     backdrop-filter: blur(20px);
     border-right: 1px solid rgba(255, 255, 255, 0.1);
@@ -47,12 +47,11 @@ body {
 }
 
 
-/* Сетка карточек */
 .album-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     gap: 25px;
-    padding-bottom: 50px; /* Чтобы плеер не закрывал нижние карточки */
+    padding-bottom: 50px;
 }
 
 .album-card {
@@ -81,7 +80,6 @@ body {
     box-shadow: 0 15px 35px rgba(0,0,0,0.5);
 }
 
-/* Основной контейнер плеера */
 .music-player {
     position: fixed;
     bottom: 0;
@@ -97,19 +95,16 @@ body {
     z-index: 1000;
 }
 
-/* Левая секция */
 .song-bar { width: 25%; }
 .song-infos { display: flex; align-items: center; gap: 15px; }
 .image-container { width: 56px; height: 56px; border-radius: 8px; background: #333; background-size: cover; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
 .song-description .title { font-weight: bold; font-size: 14px; margin: 0; color: white; }
 .song-description .artist { font-size: 12px; opacity: 0.6; margin: 0; color: white; }
 
-/* Центральная секция */
 .progression-bar { width: 50%; display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .control-buttons { display: flex; align-items: center; gap: 30px; }
 .control-buttons button { background: none; border: none; color: white; font-size: 20px; cursor: pointer; }
 
-/* Глянцевая кнопка Aero */
 .play-pause {
     width: 46px;
     height: 46px;
@@ -125,12 +120,10 @@ body {
 }
 .play-pause:hover { transform: scale(1.1); }
 
-/* Таймбар */
 .time-bar { width: 100%; display: flex; align-items: center; gap: 12px; font-size: 11px; color: white; }
 .progress-bg { flex-grow: 1; height: 5px; background: rgba(255, 255, 255, 0.2); border-radius: 5px; cursor: pointer; position: relative; }
 .progress-line { height: 100%; width: 0%; background: #00fff2; box-shadow: 0 0 10px #00fff2; border-radius: 5px; transition: width 0.1s linear; }
 
-/* Правая секция */
 .other-features { width: 25%; display: flex; justify-content: flex-end; }
 .like-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
 
@@ -166,9 +159,8 @@ body {
     backdrop-filter: blur(5px);
 }
 
-/* Эффект для пунктов меню и плейлистов в сайдбаре */
 .menu-item, .playlist-item {
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Плавная пружинистая анимация */
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     cursor: pointer;
     position: relative;
     padding: 12px 15px;
@@ -177,33 +169,27 @@ body {
     border: 1px solid transparent;
 }
 
-/* Состояние при наведении */
 .menu-item:hover, .playlist-item:hover {
-    background: rgba(255, 255, 255, 0.12); /* Стеклянный фон */
+    background: rgba(255, 255, 255, 0.12);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.2);
 
-    /* Эффект выдвижения вправо на 12 пикселей */
     transform: translateX(12px) scale(1.02);
 
-    /* Тень и свечение в стиле Aero */
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2),
                 inset 0 0 10px rgba(255, 255, 255, 0.1);
 }
 
-/* Активное состояние (чтобы понимать, где мы находимся) */
 .menu-item.active {
     background: rgba(255, 255, 255, 0.15);
     border: 1px solid rgba(255, 255, 255, 0.3);
     box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
 }
 
-/* Добавим иконкам внутри пунктов небольшое свечение при наведении */
 .menu-item:hover .icon, .playlist-item:hover span {
     text-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
 }
 
-/* Базовый стиль кнопки лайка */
 .like-btn {
     background: none;
     border: none;
@@ -219,14 +205,12 @@ body {
     transform: scale(1.2);
 }
 
-/* Состояние, когда лайк поставлен */
 .like-btn.liked {
     color: #ff4b2b !important; /* Ярко-красный */
     text-shadow: 0 0 15px rgba(255, 75, 43, 0.8); /* Свечение */
     transform: scale(1.1);
 }
 
-/* Контейнер для нашего кастомного селектора */
 .custom-dropdown {
     position: relative;
     width: 100%;
@@ -234,7 +218,6 @@ body {
     font-family: 'Segoe UI', sans-serif;
 }
 
-/* Кнопка, на которую нажимаем */
 .dropdown-selected {
     background: linear-gradient(180deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 100%);
     backdrop-filter: blur(12px);
@@ -256,7 +239,6 @@ body {
     transform: scale(1.02);
 }
 
-/* Выпадающее глянцевое меню */
 .dropdown-menu {
     display: none;
     position: absolute;
@@ -273,7 +255,6 @@ body {
     animation: fadeIn 0.3s ease;
 }
 
-/* Пункты меню */
 .dropdown-item {
     padding: 10px 15px;
     color: white;

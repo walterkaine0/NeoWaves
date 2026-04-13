@@ -8,7 +8,6 @@
     <link rel="stylesheet" th:href="@{/css/style.css}">
 
 
-    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
@@ -16,7 +15,6 @@
 <body>
 <div class="app-container" style="display: grid; grid-template-columns: 260px 1fr; height: calc(100vh - 90px); overflow: hidden;">
 
-    <!-- САЙДБАР -->
     <aside class="sidebar" style="background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(20px); border-right: 1px solid rgba(255, 255, 255, 0.1); width: 260px; height: 100vh; padding: 20px; display: flex; flex-direction: column;">
         <div style="font-size: 24px; font-weight: 900; font-style: italic; margin-bottom: 30px;">Waves</div>
 
@@ -27,18 +25,15 @@
 
         <div style="margin-top: 30px;">
             <p style="font-size: 11px; opacity: 0.5; font-weight: bold; margin-bottom: 15px; letter-spacing: 1px;">ПЛЕЙЛИСТЫ</p>
-            <!-- ПУСТОЙ КОНТЕЙНЕР БЕЗ th:each -->
+
             <div id="playlists-container" style="display: flex; flex-direction: column; gap: 8px;">
-                <!-- ЗДЕСЬ ДОЛЖНО БЫТЬ ПУСТО. Удали весь код th:each и внутренние div -->
             </div>
-            <!-- Добавь ID кнопке, чтобы JS мог её прятать -->
             <button id="create-playlist-btn" onclick="handleCreatePlaylist()" style="display: none; width: 100%; margin-top: 15px; padding: 10px; border-radius: 20px; border: none; background: white; color: #0072ff; font-weight: bold; cursor: pointer;">
                 + Создать
             </button>
         </div>
     </aside>
 
-    <!-- ОСНОВНОЙ КОНТЕНТ (Сетка песен) -->
     <main class="main-content">
         <header style="width: 100%; display: flex; justify-content: flex-end; padding: 20px 40px; box-sizing: border-box;">
             <div id="auth-section" style="display: flex; align-items: center; gap: 15px;">
@@ -50,7 +45,6 @@
 
         <section class="content">
             <div id="content-grid" class="album-grid">
-                <!-- Сюда Thymeleaf рендерит песни при загрузке, а JS — при выборе плейлиста -->
                 <div th:each="song, iter : ${songs}" th:if="${song != null}" class="album-card">
                     <div th:onclick="|playSpecific(${iter.index})|">
                         <img th:src="${song.album?.coverUrl ?: '/img/default.png'}" alt="Cover">
@@ -58,8 +52,6 @@
                         <p th:text="${song.album?.artist?.name ?: 'Unknown'}"></p>
                     </div>
 
-                    <!-- Добавление в плейлист -->
-                    <!-- Контейнер для кнопок "+ В плейлист", тоже пустой -->
                     <div class="playlist-selector-container" th:attr="data-song-id=${song.id}"></div>
 
                 </div>
@@ -72,7 +64,6 @@
 <audio id="main-audio"></audio>
 <footer class="music-player" style="position: fixed; bottom: 0; left: 0; width: 100%; height: 90px; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(25px); border-top: 1px solid rgba(255, 255, 255, 0.3); display: flex; justify-content: space-between; align-items: center; padding: 0 30px; box-sizing: border-box; z-index: 9999; color: white;">
 
-    <!-- Лево: Инфо -->
     <div style="width: 25%; display: flex; align-items: center; gap: 15px;">
         <div id="mini-cover" style="width: 56px; height: 56px; border-radius: 8px; background: rgba(255,255,255,0.2); background-size: cover; box-shadow: 0 4px 10px rgba(0,0,0,0.3);"></div>
         <div style="overflow: hidden;">
@@ -81,7 +72,6 @@
         </div>
     </div>
 
-    <!-- Центр: Управление -->
     <div style="width: 50%; display: flex; flex-direction: column; align-items: center; gap: 10px;">
         <div style="display: flex; align-items: center; gap: 30px;">
             <button onclick="prevTrack()" style="background: none; border: none; color: white; cursor: pointer; font-size: 20px;">⏮</button>
@@ -97,7 +87,6 @@
         </div>
     </div>
 
-    <!-- Право: Лайк -->
     <div style="width: 25%; display: flex; justify-content: flex-end; align-items: center;">
         <div id="main-like-btn" class="like-btn" onclick="handleLike()" style="font-size: 30px; line-height: 1;">
             ❤
@@ -107,8 +96,6 @@
 
 <script th:inline="javascript">
     const API_BASE = 'http://localhost:8081';
-    // --- 2. Массив песен (Thymeleaf) ---
-    // 1. Формируем массив песен из Spring Model
         let songs = [];
         /*[# th:each="s : ${songs}"]*/
             /*[# th:if="${s != null}"]*/
@@ -125,19 +112,17 @@
         const audio = document.getElementById('main-audio');
         const playBtn = document.getElementById('play-btn');
 
-        // 2. Функции плеера
         function loadTrack(index) {
     if (songs.length === 0) return;
     const s = songs[index];
 
     currentIndex = index;
-    window.currentTrackId = s.id; // Ключевой момент для работы лайка
+    window.currentTrackId = s.id;
 
     document.getElementById('track-title').innerText = s.title;
     document.getElementById('artist-name').innerText = s.artist;
     document.getElementById('mini-cover').style.backgroundImage = `url('${s.coverUrl}')`;
 
-    // Когда включаем новый трек, убираем красный цвет с кнопки
     const heartBtn = document.getElementById('main-like-btn');
     if (heartBtn) {
         heartBtn.classList.remove('liked');
@@ -146,8 +131,6 @@
     audio.src = s.s3Url;
 }
 
-
-        // Вызываем загрузку первого трека, если они есть
         if (songs.length > 0) { loadTrack(0); }
 
 
@@ -169,8 +152,6 @@
         };
 
 
-
-        // 3. Таймбар и прогресс
         audio.ontimeupdate = () => {
             if (audio.duration) {
                 const pct = (audio.currentTime / audio.duration) * 100;
@@ -191,12 +172,9 @@
             return min + ":" + (sec < 10 ? '0' + sec : sec);
         }
 
-        // 4. Заглушки для функций плейлиста (чтобы консоль не ругалась)
         window.openPlaylist = (id) => { console.log("Open playlist", id); };
         window.handleDeletePlaylist = (id) => { console.log("Delete playlist", id); };
 
-
-    // --- 4. Восстановление Firebase функций ---
         document.addEventListener("DOMContentLoaded", () => {
 
         const firebaseConfig = {
@@ -216,18 +194,15 @@
 
 
 
-            // 1. Функция входа
         window.handleLogin = () => {
     const provider = new firebase.auth.GoogleAuthProvider();
     firebase.auth().signInWithPopup(provider)
         .then((result) => {
             console.log("Успешный вход:", result.user.email);
-            // Сразу перезагружаем страницу с email, чтобы Java отдала плейлисты
             window.location.href = "/?userEmail=" + encodeURIComponent(result.user.email);
         })
         .catch((error) => {
             console.error("Ошибка входа:", error);
-            // Если попап заблокирован, пробуем редирект как запасной вариант
             firebase.auth().signInWithRedirect(provider);
         });
 };
@@ -236,10 +211,10 @@
         window.playSpecific = (index) => {
     if (!songs[index]) return;
 
-    currentIndex = index; // КРИТИЧЕСКИ ВАЖНО: теперь handleLike будет знать, какой трек выбран
+    currentIndex = index;
 
     const s = songs[index];
-    window.currentTrackId = s.id; // Для надежности сохраняем и ID
+    window.currentTrackId = s.id;
 
     document.getElementById('track-title').innerText = s.title;
     document.getElementById('artist-name').innerText = s.artist;
@@ -262,7 +237,7 @@
         fetch(`/playlist/user?email=${encodeURIComponent(email)}`)
             .then(res => res.json())
             .then(playlists => {
-                container.innerHTML = ''; // Чистим перед отрисовкой
+                container.innerHTML = '';
                 playlists.forEach(pl => {
                     const isFav = pl.name === 'Favorites';
                     const div = document.createElement('div');
@@ -290,7 +265,6 @@ window.renderUserContent = (email) => {
     fetch(`/playlist/user?email=${encodeURIComponent(email)}`)
         .then(res => res.json())
         .then(playlists => {
-            // 1. Сайдбар с крестиками
             const container = document.getElementById('playlists-container');
             if (container) {
                 container.innerHTML = playlists.map(pl => {
@@ -305,7 +279,6 @@ window.renderUserContent = (email) => {
                 }).join('');
             }
 
-            // 2. Глянцевые кастомные выпадающие списки под треками
             document.querySelectorAll('.playlist-selector-container').forEach(div => {
                 const songId = div.getAttribute('data-song-id');
                 div.style.display = 'block';
@@ -328,8 +301,6 @@ window.renderUserContent = (email) => {
         });
 };
 
-// --- 2. Мониторинг состояния (Вход / Выход) ---
-// --- ФИНАЛЬНЫЙ МОНИТОРИНГ СОСТОЯНИЯ ---
 firebase.auth().onAuthStateChanged(user => {
     const loginBtn = document.getElementById('login-btn');
     const logoutBtn = document.getElementById('logout-btn');
@@ -337,27 +308,22 @@ firebase.auth().onAuthStateChanged(user => {
     const createBtn = document.getElementById('create-playlist-btn');
     const container = document.getElementById('playlists-container');
 
-    // СНАЧАЛА объявляем переменную, чтобы не было ошибки ReferenceError
     const urlParams = new URLSearchParams(window.location.search);
     const emailInUrl = urlParams.get('userEmail');
 
     if (user) {
         console.log("Пользователь вошел:", user.email);
 
-        // Синхронизация URL (чтобы Java отдавала данные в модель)
         if (emailInUrl !== user.email) {
             window.location.href = "/?userEmail=" + encodeURIComponent(user.email);
             return;
         }
 
-        // Показываем кнопки и имя
         if (loginBtn) loginBtn.style.setProperty('display', 'none', 'important');
         if (logoutBtn) logoutBtn.style.setProperty('display', 'block', 'important');
         if (userName) userName.innerText = user.displayName || user.email;
         if (createBtn) createBtn.style.display = 'block';
 
-        // ЗАПУСКАЕМ ОТРИСОВКУ КОНТЕНТА
-        // Вызываем твои функции для сайдбара и селекторов под треками
         if (typeof window.loadSidebar === 'function') {
             window.loadSidebar();
         }
@@ -365,7 +331,6 @@ firebase.auth().onAuthStateChanged(user => {
             window.updateAllSelects();
         }
 
-        // Синхронизируем сессию с бэкендом
         user.getIdToken(true).then(idToken => {
             fetch('/api/auth/sync', {
                 method: 'POST',
@@ -381,18 +346,15 @@ firebase.auth().onAuthStateChanged(user => {
     } else {
         console.log("Пользователь не авторизован. Очистка...");
 
-        // Очищаем всё, чтобы данные не висели после выхода
         if (container) container.innerHTML = '';
         if (createBtn) createBtn.style.display = 'none';
         if (userName) userName.innerText = '';
 
-        // Скрываем и очищаем выпадающие списки под треками
         document.querySelectorAll('.playlist-selector-container').forEach(div => {
             div.innerHTML = '';
             div.style.display = 'none';
         });
 
-        // Если в URL остался email после выхода — уходим на чистую главную
         if (emailInUrl) {
             window.location.href = "/";
             return;
@@ -403,8 +365,6 @@ firebase.auth().onAuthStateChanged(user => {
     }
 });
 
-
-        // --- 3. Функция выхода ---
         window.handleLogout = () => {
         firebase.auth().signOut().then(() => {
             // Перенаправляем на чистый корень БЕЗ ?userEmail=...
@@ -416,19 +376,16 @@ firebase.auth().onAuthStateChanged(user => {
     const u = firebase.auth().currentUser;
     if (!u) return showModal("Войдите в аккаунт!");
 
-    // Берем ID трека, который мы сохранили при нажатии Play
     const trackId = window.currentTrackId;
     if (!trackId) return showModal("Сначала выберите трек!");
 
     const heartBtn = document.getElementById('main-like-btn');
 
-    // Отправка на твой Spring Boot контроллер
     fetch(`/like/${trackId}?userEmail=${encodeURIComponent(u.email)}`, { method: 'POST' })
         .then(r => r.text())
         .then(message => {
             console.log("Ответ сервера:", message);
 
-            // Просто переключаем класс .liked из твоего CSS
             heartBtn.classList.toggle('liked');
         })
         .catch(err => console.error("Ошибка лайка:", err));
@@ -440,24 +397,19 @@ firebase.auth().onAuthStateChanged(user => {
     let trackToDelete = { pId: null, sId: null };
 
 
-
-    // 1. Инициализация при загрузке
     window.onload = () => {
         window.loadSidebar();
     };
 
     window.loadSidebar = () => {
-    // 1. Пытаемся получить текущего пользователя из Firebase
     const user = firebase.auth().currentUser;
 
-    // 2. Если пользователя нет — очищаем сайдбар и выходим
     if (!user) {
         const container = document.getElementById('playlists-container');
         if (container) container.innerHTML = '';
         return;
     }
 
-    // 3. Если пользователь есть — берем ЕГО email динамически
     const email = user.email;
 
     fetch(`${API_BASE}/playlist/user?email=${encodeURIComponent(email)}`)
@@ -505,7 +457,7 @@ firebase.auth().onAuthStateChanged(user => {
         fetch(`/playlist/create?name=${encodeURIComponent(name)}&userEmail=${encodeURIComponent(u.email)}`, { method: 'POST' })
             .then(res => res.text())
             .then(msg => {
-                alert(msg); // Откроет твою infoModal
+                alert(msg);
                 location.reload();
             });
         closePlaylistModal();
@@ -520,12 +472,10 @@ firebase.auth().onAuthStateChanged(user => {
     containers.forEach(container => {
         const songId = container.dataset.songId;
 
-        // Генерируем пункты меню
         const menuItemsHtml = globalPlaylists.map(p =>
             `<div class="dropdown-item" onclick="window.confirmAddToPlaylist(${p.id}, ${songId})">${p.name}</div>`
         ).join('');
 
-        // ИСПРАВЛЕНО: передаем 'this' вместо '${songId}'
         container.innerHTML = `
             <div class="custom-dropdown">
                 <div class="dropdown-selected" onclick="window.toggleDropdown(event, this)">
@@ -540,23 +490,19 @@ firebase.auth().onAuthStateChanged(user => {
     });
 };
 
-       // 4. Управление выпадающим списком
 window.toggleDropdown = (event, element) => {
     if (event) event.stopPropagation();
 
-    // Если вдруг пришло не то, пытаемся найти ближайший контейнер
     const container = (element && element.parentElement) ? element.parentElement : null;
     if (!container) return console.error("Контейнер не найден");
 
     const menu = container.querySelector('.dropdown-menu');
     if (!menu) return console.error("Меню не найдено");
 
-    // Закрываем другие
     document.querySelectorAll('.dropdown-menu').forEach(m => {
         if (m !== menu) m.style.display = 'none';
     });
 
-    // Переключаем текущее
     menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
 };
 
@@ -565,22 +511,17 @@ window.confirmAddToPlaylist = (playlistId, songId) => {
     document.querySelectorAll('.dropdown-menu').forEach(m => m.style.display = 'none');
 };
 
-
-    // 6. Открытие плейлиста
 window.openPlaylist = (id) => {
     fetch(`${API_BASE}/playlist/${id}/songs`)
         .then(r => r.json())
         .then(data => {
             if (data.length === 0) return window.alert("Плейлист пуст 🫧");
 
-            // Сохраняем песни в глобальный массив, чтобы плеер мог их играть
             songs = data.map(s => ({
                 id: s.id,
                 title: s.title,
                 s3Url: s.s3Url,
-                // Достаем обложку из альбома
                 coverUrl: s.album ? s.album.coverUrl : '/img/default-cover.png',
-                // Достаем имя артиста из вложенного объекта
                 artist: (s.album && s.album.artist) ? s.album.artist.name : 'Unknown Artist'
             }));
 
@@ -617,7 +558,6 @@ window.openPlaylist = (id) => {
         .catch(err => console.error("Ошибка загрузки песен плейлиста:", err));
 };
 
-// Функция открытия модалки
 window.showModal = (message, title = "NeoWaves") => {
     const modal = document.getElementById('universal-modal');
     document.getElementById('modal-title').innerText = title;
@@ -625,12 +565,10 @@ window.showModal = (message, title = "NeoWaves") => {
     modal.style.display = 'flex';
 };
 
-// Функция закрытия
 window.closeModal = () => {
     document.getElementById('universal-modal').style.display = 'none';
 };
 
-// Переопределяем стандартный alert (по желанию), чтобы старый код тоже стал красивым
 window.showModal = (msg) => window.showModal(msg);
     // Открытие модалки удаления трека
     window.removeFromPlaylist = (playlistId, songId) => {
@@ -638,9 +576,6 @@ window.showModal = (msg) => window.showModal(msg);
         document.getElementById('deleteTrackModal').style.display = 'flex';
     };
 
-
-
-    // Удаление плейлиста
 let playlistIdToDelete = null;
 
 window.handleDeletePlaylist = (id) => {
@@ -648,7 +583,6 @@ window.handleDeletePlaylist = (id) => {
     const confirmBtn = document.getElementById('confirmDeleteBtn');
     modal.style.display = 'flex';
 
-    // Привязываем ID к кнопке внутри модалки
     confirmBtn.onclick = () => {
         fetch(`/playlist/delete/${id}`, { method: 'POST' })
             .then(res => {
@@ -671,7 +605,6 @@ document.getElementById('confirmDeleteBtn').onclick = () => {
         .then(r => r.ok ? location.reload() : window.alert("Нельзя удалить Избранное 🫧"));
 };
 
-// --- Инфо-модалка (вместо системного alert) ---
 window.alert = (message) => {
     const infoModal = document.getElementById('infoModal');
     if (infoModal) {
@@ -691,7 +624,7 @@ document.getElementById('confirmTrackDeleteBtn').onclick = () => {
         .then(r => {
             if (r.ok) {
                 closeTrackModal();
-                window.openPlaylist(pId); // Обновляем мгновенно
+                window.openPlaylist(pId);
             }
         });
 };
@@ -700,8 +633,6 @@ document.getElementById('confirmTrackDeleteBtn').onclick = () => {
     document.querySelectorAll('.dropdown-menu').forEach(m => m.style.display = 'none');
 });
 
-
-// Исправь вызов модалки создания плейлиста
 window.handleCreatePlaylist = () => {
     const email = "denizshkololo@gmail.com";
     if (!email) return window.alert("Войдите в аккаунт 🫧");
@@ -711,7 +642,7 @@ window.handleCreatePlaylist = () => {
 
         if (songs.length > 0) loadTrack(0);
 
-    }); // <-- ВОТ ЭТОЙ СКОБКИ НЕ ХВАТАЛО, она закрывает DOMContentLoaded
+    });
 
 </script>
 
@@ -749,7 +680,6 @@ window.handleCreatePlaylist = () => {
     </div>
 </div>
 
-<!-- Модальное окно удаления -->
 <div id="deleteModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.1); backdrop-filter: blur(10px); z-index:9999; justify-content:center; align-items:center;">
     <div style="background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 100%);
                 border: 1px solid rgba(255,255,255,0.5);
@@ -777,7 +707,6 @@ window.handleCreatePlaylist = () => {
     </div>
 </div>
 
-<!-- Модалка удаления трека -->
 <div id="deleteTrackModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.1); backdrop-filter: blur(10px); z-index:9999; justify-content:center; align-items:center;">
     <div style="background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 100%); border: 1px solid rgba(255,255,255,0.5); box-shadow: 0 8px 32px rgba(0,0,0,0.3); padding: 25px; border-radius: 25px; width: 350px; text-align: center;">
         <h3 style="color: #fff; margin-bottom: 20px;">🫧 Удалить трек?</h3>
@@ -789,7 +718,6 @@ window.handleCreatePlaylist = () => {
     </div>
 </div>
 
-<!-- Модалка-уведомление (вместо alert) -->
 <div id="infoModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.05); backdrop-filter: blur(5px); z-index:10000; justify-content:center; align-items:center;">
     <div style="background: linear-gradient(135deg, rgba(120,220,255,0.4) 0%, rgba(255,255,255,0.1) 100%); border: 1px solid rgba(255,255,255,0.5); padding: 20px; border-radius: 20px; width: 300px; text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
         <p id="infoModalText" style="color: white; margin-bottom: 20px; font-weight: 500;"></p>

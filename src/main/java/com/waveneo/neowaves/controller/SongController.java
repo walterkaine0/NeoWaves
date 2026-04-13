@@ -12,7 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 
-@CrossOrigin(origins = "*") // Добавь это обязательно!
+@CrossOrigin(origins = "*")
 @Controller
 public class SongController {
 
@@ -27,16 +27,14 @@ public class SongController {
 
     @GetMapping("/")
     public String index(Model model, @RequestParam(required = false) String userEmail) {
-        // Песни показываем всем
+
         model.addAttribute("songs", songRepository.findAll());
 
-        // Если email не передан, ПРИНУДИТЕЛЬНО очищаем список плейлистов
         if (userEmail == null || userEmail.trim().isEmpty() || userEmail.equals("null")) {
             model.addAttribute("playlists", new ArrayList<Playlist>());
         } else {
             User user = userRepository.findByEmail(userEmail).orElse(null);
             if (user != null) {
-                // Фильтруем плейлисты именно этого пользователя
                 List<Playlist> userPlaylists = playlistRepository.findAll().stream()
                         .filter(p -> p.getUser() != null && p.getUser().getEmail().equalsIgnoreCase(userEmail))
                         .toList();
@@ -48,8 +46,6 @@ public class SongController {
         return "index";
     }
 
-
-    // 2. ИСПРАВЛЕННЫЙ МЕТОД ЛАЙКА
     @PostMapping("/like/{songId}")
     @ResponseBody
     @Transactional
@@ -57,7 +53,6 @@ public class SongController {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Используем новый метод репозитория
         Playlist favorites = playlistRepository.findByNameIgnoreCaseAndUserId("Favorites", user.getId())
                 .orElseGet(() -> {
                     Playlist p = new Playlist();
@@ -82,8 +77,6 @@ public class SongController {
             return "Added to Favorites!";
         }
     }
-
-    // 3. МЕТОД ДЛЯ ЗАГРУЗКИ ПЕСЕН ПЛЕЙЛИСТА
     @GetMapping("/playlist/{id}/songs")
     @ResponseBody
     @Transactional(readOnly = true)
@@ -113,7 +106,7 @@ public class SongController {
         return "Уже в плейлисте";
     }
 
-    @GetMapping("/playlist/user") // Убрали {email} из пути
+    @GetMapping("/playlist/user")
     @ResponseBody
     public List<Playlist> getUserPlaylists(@RequestParam String email) {
         return playlistRepository.findByUserEmail(email);
@@ -163,12 +156,10 @@ public class SongController {
         Playlist playlist = playlistRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Плейлист не найден"));
 
-        // Запрещаем удалять избранное
         if ("Favorites".equalsIgnoreCase(playlist.getName())) {
             return ResponseEntity.badRequest().body("Нельзя удалить Избранное");
         }
 
-        // Сначала очищаем связи с песнями, чтобы не было ошибок внешнего ключа
         playlist.getSongs().clear();
         playlistRepository.delete(playlist);
 
