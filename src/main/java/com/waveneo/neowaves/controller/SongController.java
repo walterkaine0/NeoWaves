@@ -1,6 +1,5 @@
 package com.waveneo.neowaves.controller;
 
-
 import com.waveneo.neowaves.model.Playlist;
 import com.waveneo.neowaves.model.Song;
 import com.waveneo.neowaves.model.User;
@@ -29,6 +28,8 @@ public class SongController {
 
     @Autowired
     private UserRepository userRepository;
+
+    public record PlaylistSidebarDto(Long id, String name) {}
 
     @GetMapping("/")
     public String index(Model model) {
@@ -104,8 +105,11 @@ public class SongController {
 
     @GetMapping("/playlist/user")
     @ResponseBody
-    public List<Playlist> getUserPlaylists(@RequestParam String email) {
-        return playlistRepository.findByUserEmail(email);
+    @Transactional
+    public List<PlaylistSidebarDto> getUserPlaylists(@RequestParam String email) {
+        return playlistRepository.findByUserEmail(email).stream()
+                .map(p -> new PlaylistSidebarDto(p.getId(), p.getName()))
+                .toList();
     }
 
     @PostMapping("/playlist/create")

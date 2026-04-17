@@ -423,7 +423,9 @@
             `;
         }
 
-        const menuItemsHtml = globalPlaylists.map(p => `
+        const playlists = Array.isArray(globalPlaylists) ? globalPlaylists : [];
+
+        const menuItemsHtml = playlists.map(p => `
             <div class="dropdown-item" onclick="window.confirmAddToPlaylist(${p.id}, ${songId})">
                 ${p.name}
             </div>
@@ -497,7 +499,7 @@
     }
 
     function renderPlaylists(playlists) {
-        globalPlaylists = playlists || [];
+        globalPlaylists = Array.isArray(playlists) ? playlists : [];
         const container = document.getElementById('playlists-container');
         if (!container) return;
 
@@ -518,7 +520,7 @@
         });
     }
 
-    async function loadSidebar(emailOverride) {
+    window.loadSidebar = async (emailOverride) => {
         const effectiveEmail = emailOverride || (auth.currentUser ? auth.currentUser.email : null);
         const container = document.getElementById('playlists-container');
 
@@ -530,17 +532,24 @@
 
         try {
             const response = await fetch(`${API_BASE}/playlist/user?email=${encodeURIComponent(effectiveEmail)}`);
-            const playlists = await response.json();
-            renderPlaylists(playlists);
-            if (currentView === 'home' || currentView === 'search') {
-                renderSongCards(renderedSongs);
-            }
-        } catch (err) {
-            console.error(err);
-        }
-    }
 
-    window.loadSidebar = loadSidebar;
+            if (!response.ok) {
+                const text = await response.text();
+                console.error('playlist/user failed:', response.status, text);
+                globalPlaylists = [];
+                if (container) container.innerHTML = '';
+                return;
+            }
+
+            const data = await response.json();
+            const playlists = Array.isArray(data) ? data : [];
+            renderPlaylists(playlists);
+        } catch (err) {
+            console.error('Ошибка loadSidebar:', err);
+            globalPlaylists = [];
+            if (container) container.innerHTML = '';
+        }
+    };
 
     window.toggleDropdown = (event, element) => {
         if (event) event.stopPropagation();
@@ -971,7 +980,6 @@
                 console.error(e);
             }
 
-            loginBtn.style.display = 'inline-flex';
             loginBtn.style.setProperty('display', 'none', 'important');
             logoutBtn.style.setProperty('display', 'inline-flex', 'important');
             createBtn.style.display = 'inline-flex';
