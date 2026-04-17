@@ -1,13 +1,18 @@
 package com.waveneo.neowaves.controller;
 
-import com.waveneo.neowaves.model.*;
-import com.waveneo.neowaves.repository.*;
+
+import com.waveneo.neowaves.model.Playlist;
+import com.waveneo.neowaves.model.Song;
+import com.waveneo.neowaves.model.User;
+import com.waveneo.neowaves.repository.PlaylistRepository;
+import com.waveneo.neowaves.repository.SongRepository;
+import com.waveneo.neowaves.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,7 +56,9 @@ public class SongController {
         Song song = songRepository.findById(songId)
                 .orElseThrow(() -> new RuntimeException("Song not found"));
 
-        if (favorites.getSongs() == null) favorites.setSongs(new ArrayList<>());
+        if (favorites.getSongs() == null) {
+            favorites.setSongs(new ArrayList<>());
+        }
 
         if (favorites.getSongs().contains(song)) {
             favorites.getSongs().remove(song);
@@ -63,13 +70,14 @@ public class SongController {
             return "Added to Favorites!";
         }
     }
+
     @GetMapping("/playlist/{id}/songs")
     @ResponseBody
-    @Transactional(readOnly = true)
+    @Transactional
     public List<Song> getPlaylistSongs(@PathVariable Long id) {
         return playlistRepository.findById(id)
                 .map(p -> {
-                    p.getSongs().size(); // Принудительный "прогрев" списка
+                    p.getSongs().size();
                     return p.getSongs();
                 })
                 .orElse(new ArrayList<>());
@@ -81,6 +89,7 @@ public class SongController {
     public String addSongToPlaylist(@PathVariable Long playlistId, @PathVariable Long songId) {
         Playlist playlist = playlistRepository.findById(playlistId)
                 .orElseThrow(() -> new RuntimeException("Плейлист не найден"));
+
         Song song = songRepository.findById(songId)
                 .orElseThrow(() -> new RuntimeException("Песня не найдена"));
 
@@ -89,6 +98,7 @@ public class SongController {
             playlistRepository.save(playlist);
             return "Добавлено в " + playlist.getName();
         }
+
         return "Уже в плейлисте";
     }
 
@@ -113,8 +123,8 @@ public class SongController {
         playlist.setName(name);
         playlist.setUser(user);
         playlist.setSongs(new ArrayList<>());
-        playlistRepository.save(playlist);
 
+        playlistRepository.save(playlist);
         return "Плейлист '" + name + "' создан!";
     }
 
@@ -124,6 +134,7 @@ public class SongController {
     public String removeSongFromPlaylist(@PathVariable Long playlistId, @PathVariable Long songId) {
         Playlist playlist = playlistRepository.findById(playlistId)
                 .orElseThrow(() -> new RuntimeException("Плейлист не найден"));
+
         Song song = songRepository.findById(songId)
                 .orElseThrow(() -> new RuntimeException("Песня не найдена"));
 
@@ -132,6 +143,7 @@ public class SongController {
             playlistRepository.save(playlist);
             return "Удалено из плейлиста";
         }
+
         return "Песни нет в этом плейлисте";
     }
 
