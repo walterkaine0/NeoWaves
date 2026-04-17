@@ -1,0 +1,41 @@
+{
+  "name": "waves",
+  "version": "1.0.0",
+  "description": "Waves Desktop Music Player",
+  "main": "main.js",
+  "scripts": {
+    "backend:build": "gradlew.bat bootJar",
+    "start": "electron .",
+    "dist": "npm run backend:build && electron-builder"
+  },
+  "build": {
+    "appId": "com.neowaves.desktop",
+    "productName": "Waves",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": ["nsis"],
+      "artifactName": "Waves_Setup.exe"
+    },
+    "extraResources": [
+      {
+        "from": "build/libs/neo-waves-0.0.1-SNAPSHOT.jar",
+        "to": "app/backend/neo-waves-0.0.1-SNAPSHOT.jar"
+      },
+      {
+        "from": "jre",
+        "to": "jre"
+      }
+    ],
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true
+    }
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
+  }
+}

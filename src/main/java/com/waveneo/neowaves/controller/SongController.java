@@ -1,17 +1,22 @@
 package com.waveneo.neowaves.controller;
 
-import com.waveneo.neowaves.model.*;
-import com.waveneo.neowaves.repository.*;
+import com.waveneo.neowaves.model.Playlist;
+import com.waveneo.neowaves.model.Song;
+import com.waveneo.neowaves.model.User;
+import com.waveneo.neowaves.repository.PlaylistRepository;
+import com.waveneo.neowaves.repository.SongRepository;
+import com.waveneo.neowaves.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@CrossOrigin(origins = "*")
 @Controller
 public class SongController {
 
@@ -24,22 +29,12 @@ public class SongController {
     @Autowired
     private UserRepository userRepository;
 
-    @GetMapping("/")
-    public String index(Model model, @RequestParam(required = false) String userEmail) {
-        model.addAttribute("songs", songRepository.findAll());
+    public record PlaylistSidebarDto(Long id, String name) {}
 
-        if (userEmail != null && !userEmail.isEmpty()) {
-            User user = userRepository.findByEmail(userEmail).orElse(null);
-            if (user != null) {
-                model.addAttribute("playlists", playlistRepository.findAll().stream()
-                        .filter(p -> p.getUser() != null && p.getUser().getId().equals(user.getId()))
-                        .toList());
-            } else {
-                model.addAttribute("playlists", new ArrayList<>());
-            }
-        } else {
-            model.addAttribute("playlists", new ArrayList<>());
-        }
+    @GetMapping("/")
+    public String index(Model model) {
+        model.addAttribute("songs", songRepository.findAll());
+        model.addAttribute("playlists", new ArrayList<Playlist>());
         return "index";
     }
 
@@ -50,6 +45,7 @@ public class SongController {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        // Используем новый метод репозитория
         Playlist favorites = playlistRepository.findByNameIgnoreCaseAndUserId("Favorites", user.getId())
                 .orElseGet(() -> {
                     Playlist p = new Playlist();
@@ -62,7 +58,9 @@ public class SongController {
         Song song = songRepository.findById(songId)
                 .orElseThrow(() -> new RuntimeException("Song not found"));
 
-        if (favorites.getSongs() == null) favorites.setSongs(new ArrayList<>());
+        if (favorites.getSongs() == null) {
+            favorites.setSongs(new ArrayList<>());
+        }
 
         if (favorites.getSongs().contains(song)) {
             favorites.getSongs().remove(song);
@@ -75,13 +73,14 @@ public class SongController {
         }
     }
 
+    // 3. МЕТОД ДЛЯ ЗАГРУЗКИ ПЕСЕН ПЛЕЙЛИСТА
     @GetMapping("/playlist/{id}/songs")
     @ResponseBody
     @Transactional(readOnly = true)
     public List<Song> getPlaylistSongs(@PathVariable Long id) {
         return playlistRepository.findById(id)
                 .map(p -> {
-                    p.getSongs().size();
+                    p.getSongs().size(); // Принудительный "прогрев" списка
                     return p.getSongs();
                 })
                 .orElse(new ArrayList<>());
@@ -93,6 +92,7 @@ public class SongController {
     public String addSongToPlaylist(@PathVariable Long playlistId, @PathVariable Long songId) {
         Playlist playlist = playlistRepository.findById(playlistId)
                 .orElseThrow(() -> new RuntimeException("Плейлист не найден"));
+
         Song song = songRepository.findById(songId)
                 .orElseThrow(() -> new RuntimeException("Песня не найдена"));
 
@@ -101,22 +101,36 @@ public class SongController {
             playlistRepository.save(playlist);
             return "Добавлено в " + playlist.getName();
         }
+
         return "Уже в плейлисте";
+    }
+
+    @GetMapping("/playlist/user")
+    @ResponseBody
+    @Transactional
+    public List<PlaylistSidebarDto> getUserPlaylists(@RequestParam String email) {
+        return playlistRepository.findByUserEmail(email).stream()
+                .map(p -> new PlaylistSidebarDto(p.getId(), p.getName()))
+                .toList();
     }
 
     @PostMapping("/playlist/create")
     @ResponseBody
     @Transactional
     public String createPlaylist(@RequestParam String name, @RequestParam String userEmail) {
+        if (userEmail == null || userEmail.trim().isEmpty()) {
+            return "Ошибка: Email пользователя не указан!";
+        }
+
         User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("Пользователь с email " + userEmail + " не найден в базе"));
 
         Playlist playlist = new Playlist();
         playlist.setName(name);
         playlist.setUser(user);
         playlist.setSongs(new ArrayList<>());
-        playlistRepository.save(playlist);
 
+        playlistRepository.save(playlist);
         return "Плейлист '" + name + "' создан!";
     }
 
@@ -126,6 +140,7 @@ public class SongController {
     public String removeSongFromPlaylist(@PathVariable Long playlistId, @PathVariable Long songId) {
         Playlist playlist = playlistRepository.findById(playlistId)
                 .orElseThrow(() -> new RuntimeException("Плейлист не найден"));
+
         Song song = songRepository.findById(songId)
                 .orElseThrow(() -> new RuntimeException("Песня не найдена"));
 
@@ -134,6 +149,7 @@ public class SongController {
             playlistRepository.save(playlist);
             return "Удалено из плейлиста";
         }
+
         return "Песни нет в этом плейлисте";
     }
 
