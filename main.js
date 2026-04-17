@@ -1,70 +1,205 @@
-const { app, BrowserWindow } = require('electron');
-const path = require('path');
-const { exec } = require('child_process');
+const { app, BrowserWindow, dialog } = require("electron");
+const path = require("path");
+const fs = require("fs");
+const http = require("http");
+const { spawn } = require("child_process");
 
-let serverProcess;
+const PORT = 8081;
+const SERVER_URL = `http://127.0.0.1:${PORT}`;
+const HEALTH_URL = `${SERVER_URL}/api/health`;
+const JAR_NAME = "neo-waves-0.0.1-SNAPSHOT.jar";
 
-/**
- * Создание окна браузера
- */
-function createWindow() {
-    const win = new BrowserWindow({
-        width: 1200,
-        height: 800,
-        title: "Waves Desktop",
-        // Путь к иконке (убедись, что файл существует по этому пути)
-        icon: path.join(__dirname, 'src/main/resources/static/favicon.ico'),
-        webPreferences: {
-                    partition: 'persist:google-session',
-                    nodeIntegration: false,
-                    contextIsolation: false,
-                    webSecurity: false,
-                    nativeWindowOpen: true,
-                    allowRunningInsecureContent: true
-                }
-    });
+let mainWindow = null;
+let serverProcess = null;
+let quitting = false;
 
-    win.webContents.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36");
-    win.loadURL('http://localhost:8081');
-    win.setMenuBarVisibility(false);
+function getJarPath() {
+  return app.isPackaged
+    ? path.join(process.resourcesPath, "app", "backend", JAR_NAME)
+    : path.join(__dirname, "build", "libs", JAR_NAME);
 }
 
-app.whenReady().then(() => {
-    const jarName = 'neo-waves-0.0.1-SNAPSHOT.jar';
+function getJavaPath() {
+  if (!app.isPackaged) {
+    return "java";
+  }
 
-    const jarPath = app.isPackaged
-        ? path.join(process.resourcesPath, jarName)
-        : path.join(__dirname, 'build/libs', jarName);
+  const bundledJava = path.join(
+    process.resourcesPath,
+    "jre",
+    "bin",
+    process.platform === "win32" ? "java.exe" : "java"
+  );
 
-    console.log(`[NeoWaves] Запуск бэкенда по пути: ${jarPath}`);
+  return fs.existsSync(bundledJava) ? bundledJava : "java";
+}
 
-    serverProcess = exec(`java -jar "${jarPath}"`, (error) => {
-        if (error) {
-            console.error(`[NeoWaves] Ошибка запуска JAR: ${error}`);
+function waitForServer(timeoutMs = 45000, intervalMs = 700) {
+  return new Promise((resolve, reject) => {
+    const startedAt = Date.now();
+
+    const ping = () => {
+      const req = http.get(HEALTH_URL, (res) => {
+        if (res.statusCode === 200) {
+          res.resume();
+          resolve();
+          return;
         }
+        res.resume();
+        retry();
+      });
+
+      req.on("error", retry);
+
+      req.setTimeout(2000, () => {
+        req.destroy();
+        retry();
+      });
+    };
+
+    const retry = () => {
+      if (Date.now() - startedAt >= timeoutMs) {
+        reject(new Error("Spring Boot не успел подняться за отведённое время."));
+        return;
+      }
+      setTimeout(ping, intervalMs);
+    };
+
+    ping();
+  });
+}
+
+function createWindow() {
+  mainWindow = new BrowserWindow({
+    width: 1280,
+    height: 860,
+    minWidth: 1024,
+    minHeight: 700,
+    show: false,
+    autoHideMenuBar: true,
+    backgroundColor: "#090909",
+    title: "Waves Desktop",
+    icon: path.join(__dirname, "src", "main", "resources", "static", "favicon.ico"),
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true,
+      webSecurity: true
+    }
+  });
+
+  mainWindow.once("ready-to-show", () => {
+    mainWindow.show();
+  });
+
+  mainWindow.on("closed", () => {
+    mainWindow = null;
+  });
+
+  mainWindow.loadURL(SERVER_URL);
+}
+
+function startBackend() {
+  return new Promise((resolve, reject) => {
+    const javaBinary = getJavaPath();
+    const jarPath = getJarPath();
+
+    serverProcess = spawn(javaBinary, ["-jar", jarPath], {
+      cwd: app.isPackaged ? process.resourcesPath : __dirname,
+      windowsHide: true,
+      stdio: ["ignore", "pipe", "pipe"]
     });
 
-    serverProcess.stdout.on('data', (data) => {
-        console.log(`[Spring Boot]: ${data}`);
+    serverProcess.once("error", reject);
+
+    serverProcess.once("spawn", () => {
+      resolve();
     });
 
-    setTimeout(() => {
-        createWindow();
-    }, 15000);
-
-
-    app.on('activate', () => {
-        if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    serverProcess.stdout.on("data", (data) => {
+      console.log(`[SpringBoot] ${data.toString().trim()}`);
     });
-});
 
-app.on('window-all-closed', () => {
-    if (serverProcess) {
-        console.log("[Waves] Остановка бэкенда...");
-        serverProcess.kill();
+    serverProcess.stderr.on("data", (data) => {
+      console.error(`[SpringBoot] ${data.toString().trim()}`);
+    });
+  });
+}
+
+function stopBackend() {
+  return new Promise((resolve) => {
+    if (!serverProcess || serverProcess.killed) {
+      resolve();
+      return;
     }
 
-    if (process.platform !== 'darwin') {
-        app.quit();
+    let resolved = false;
+
+    const finish = () => {
+      if (!resolved) {
+        resolved = true;
+        resolve();
+      }
+    };
+
+    serverProcess.once("exit", finish);
+    serverProcess.kill();
+
+    setTimeout(finish, 4000);
+  });
+}
+
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
+
+if (!gotSingleInstanceLock) {
+  app.quit();
+} else {
+  app.on("second-instance", () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) {
+        mainWindow.restore();
+      }
+      mainWindow.focus();
     }
-});
+  });
+
+  app.whenReady().then(async () => {
+    try {
+      await startBackend();
+      await waitForServer();
+      createWindow();
+    } catch (error) {
+      console.error("[Waves Desktop] Ошибка запуска:", error);
+
+      dialog.showErrorBox(
+        "Waves не удалось запустить",
+        `${error.message}\n\nПроверь, что доступна Java 17, либо положи bundled JRE в resources/jre.`
+      );
+
+      await stopBackend();
+      app.quit();
+    }
+  });
+
+  app.on("before-quit", async (event) => {
+    if (quitting) return;
+
+    event.preventDefault();
+    quitting = true;
+
+    await stopBackend();
+    app.quit();
+  });
+
+  app.on("window-all-closed", () => {
+    if (process.platform !== "darwin") {
+      app.quit();
+    }
+  });
+
+  app.on("activate", () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow();
+    }
+  });
+}

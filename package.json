@@ -1,20 +1,13 @@
 {
-  "name": "neowaves",
+  "name": "waves",
   "version": "1.0.0",
   "description": "Waves Desktop Music Player",
   "main": "main.js",
   "scripts": {
+    "backend:build": "gradlew.bat bootJar",
     "start": "electron .",
-    "dist": "electron-builder"
+    "dist": "npm run backend:build && electron-builder"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com"
-  },
-  "keywords": [],
-  "author": "Walterkaine",
-  "license": "ISC",
-  "type": "commonjs",
   "build": {
     "appId": "com.neowaves.desktop",
     "productName": "Waves",
@@ -22,15 +15,17 @@
       "output": "dist"
     },
     "win": {
-      "target": [
-        "nsis"
-      ],
+      "target": ["nsis"],
       "artifactName": "Waves_Setup.exe"
     },
     "extraResources": [
       {
         "from": "build/libs/neo-waves-0.0.1-SNAPSHOT.jar",
-        "to": "neo-waves-0.0.1-SNAPSHOT.jar"
+        "to": "app/backend/neo-waves-0.0.1-SNAPSHOT.jar"
+      },
+      {
+        "from": "jre",
+        "to": "jre"
       }
     ],
     "nsis": {

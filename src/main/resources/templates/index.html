@@ -12,6 +12,102 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
 </head>
+<div id="auth-shell" class="nw-auth-shell force-open">
+    <div class="nw-auth-card">
+        <button id="auth-close-btn" class="nw-auth-close" type="button" aria-label="Закрыть">×</button>
+
+        <section class="nw-auth-left">
+            <div>
+                <p class="nw-auth-eyebrow">NeoWaves</p>
+                <h1 class="nw-auth-title">Музыка, плейлисты и своя волна.</h1>
+                <p class="nw-auth-subtitle">
+                    Вход в стиле Spotify, но адаптированный под NeoWaves: тёмная сцена,
+                    акцент на библиотеку, быстрый Google sign-in и обычная регистрация по e-mail.
+                </p>
+
+                <ul class="nw-auth-bullets">
+                    <li>Google sign-in без лишних экранов</li>
+                    <li>Регистрация по e-mail и паролю</li>
+                    <li>Восстановление пароля в один шаг</li>
+                    <li>Без перезагрузки страницы после входа</li>
+                </ul>
+            </div>
+
+            <div class="nw-auth-brand-chip">NeoWaves Desktop / Web</div>
+        </section>
+
+        <section class="nw-auth-right">
+            <div class="nw-auth-tabs">
+                <button class="nw-auth-tab is-active" type="button" data-mode="login">Вход</button>
+                <button class="nw-auth-tab" type="button" data-mode="register">Регистрация</button>
+                <button class="nw-auth-tab" type="button" data-mode="reset">Сброс пароля</button>
+            </div>
+
+            <div id="auth-error" class="nw-auth-message is-error" hidden></div>
+            <div id="auth-success" class="nw-auth-message is-success" hidden></div>
+
+            <button id="google-auth-btn" class="nw-auth-google" type="button">
+                Продолжить через Google
+            </button>
+
+            <div class="nw-auth-divider">или</div>
+
+            <div class="nw-auth-panels">
+                <form id="login-form" class="nw-auth-form is-visible" data-auth-panel="login">
+                    <label>
+                        <span>E-mail</span>
+                        <input id="login-email" type="email" required placeholder="name@example.com">
+                    </label>
+
+                    <label>
+                        <span>Пароль</span>
+                        <input id="login-password" type="password" required minlength="6" placeholder="••••••••">
+                    </label>
+
+                    <button class="nw-auth-submit" type="submit">Войти</button>
+                    <button class="nw-auth-link" type="button" data-switch-to="reset">Забыли пароль?</button>
+                </form>
+
+                <form id="register-form" class="nw-auth-form" data-auth-panel="register">
+                    <label>
+                        <span>Имя</span>
+                        <input id="register-name" type="text" required placeholder="Nik">
+                    </label>
+
+                    <label>
+                        <span>E-mail</span>
+                        <input id="register-email" type="email" required placeholder="name@example.com">
+                    </label>
+
+                    <label>
+                        <span>Пароль</span>
+                        <input id="register-password" type="password" required minlength="6" placeholder="Не короче 6 символов">
+                    </label>
+
+                    <label>
+                        <span>Повтор пароля</span>
+                        <input id="register-password-confirm" type="password" required minlength="6" placeholder="Повтори пароль">
+                    </label>
+
+                    <button class="nw-auth-submit" type="submit">Создать аккаунт</button>
+                    <button class="nw-auth-link" type="button" data-switch-to="login">Уже есть аккаунт?</button>
+                </form>
+
+                <form id="reset-form" class="nw-auth-form" data-auth-panel="reset">
+                    <label>
+                        <span>E-mail</span>
+                        <input id="reset-email" type="email" required placeholder="name@example.com">
+                    </label>
+
+                    <button class="nw-auth-submit" type="submit">Отправить письмо для сброса</button>
+                    <button class="nw-auth-link" type="button" data-switch-to="login">Назад ко входу</button>
+                </form>
+            </div>
+        </section>
+    </div>
+</div>
+
+<script defer src="/js/auth-ui.js"></script>
 <body>
 <div class="app-container" style="display: grid; grid-template-columns: 260px 1fr; height: calc(100vh - 90px); overflow: hidden;">
 
@@ -300,77 +396,6 @@ window.renderUserContent = (email) => {
             });
         });
 };
-
-firebase.auth().onAuthStateChanged(user => {
-    const loginBtn = document.getElementById('login-btn');
-    const logoutBtn = document.getElementById('logout-btn');
-    const userName = document.getElementById('user-name');
-    const createBtn = document.getElementById('create-playlist-btn');
-    const container = document.getElementById('playlists-container');
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const emailInUrl = urlParams.get('userEmail');
-
-    if (user) {
-        console.log("Пользователь вошел:", user.email);
-
-        if (emailInUrl !== user.email) {
-            window.location.href = "/?userEmail=" + encodeURIComponent(user.email);
-            return;
-        }
-
-        if (loginBtn) loginBtn.style.setProperty('display', 'none', 'important');
-        if (logoutBtn) logoutBtn.style.setProperty('display', 'block', 'important');
-        if (userName) userName.innerText = user.displayName || user.email;
-        if (createBtn) createBtn.style.display = 'block';
-
-        if (typeof window.loadSidebar === 'function') {
-            window.loadSidebar();
-        }
-        if (typeof window.updateAllSelects === 'function') {
-            window.updateAllSelects();
-        }
-
-        user.getIdToken(true).then(idToken => {
-            fetch('/api/auth/sync', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    token: idToken,
-                    email: user.email,
-                    username: user.displayName || user.email.split('@')[0]
-                })
-            }).then(res => console.log("Сервер подтвердил сессию:", res.ok));
-        });
-
-    } else {
-        console.log("Пользователь не авторизован. Очистка...");
-
-        if (container) container.innerHTML = '';
-        if (createBtn) createBtn.style.display = 'none';
-        if (userName) userName.innerText = '';
-
-        document.querySelectorAll('.playlist-selector-container').forEach(div => {
-            div.innerHTML = '';
-            div.style.display = 'none';
-        });
-
-        if (emailInUrl) {
-            window.location.href = "/";
-            return;
-        }
-
-        if (loginBtn) loginBtn.style.setProperty('display', 'block', 'important');
-        if (logoutBtn) logoutBtn.style.setProperty('display', 'none', 'important');
-    }
-});
-
-        window.handleLogout = () => {
-        firebase.auth().signOut().then(() => {
-            // Перенаправляем на чистый корень БЕЗ ?userEmail=...
-            window.location.href = "/";
-        });
-    };
 
         window.handleLike = () => {
     const u = firebase.auth().currentUser;
