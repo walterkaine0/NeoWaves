@@ -17,11 +17,11 @@
 
 *{
     box-sizing:border-box;
+    margin:0;
+    padding:0;
 }
 
 html, body{
-    margin:0;
-    padding:0;
     width:100%;
     height:100%;
 }
@@ -53,7 +53,6 @@ body.auth-open{
     overflow:hidden;
 }
 
-/* shell */
 
 .app-shell{
     display:grid;
@@ -255,12 +254,12 @@ body.auth-open{
     transform:scale(1.1);
 }
 
-/* main */
 
 .main-content{
     min-width:0;
     padding:28px 32px 140px;
     overflow-y:auto;
+    overflow-x:visible;
 }
 
 .topbar{
@@ -339,11 +338,12 @@ body.auth-open{
     display:grid;
     grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));
     gap:24px;
+    overflow:visible;
 }
 
 .album-card{
     position:relative;
-    overflow:hidden;
+    overflow:visible;
     border-radius:28px;
     padding:16px;
     border:1px solid rgba(255,255,255,0.28);
@@ -352,12 +352,14 @@ body.auth-open{
         inset 0 1px 0 rgba(255,255,255,0.46),
         0 14px 34px rgba(8,38,104,0.30);
     transition:.2s ease;
+    z-index:1;
 }
 
 .album-card::after{
     content:"";
     position:absolute;
     inset:0;
+    border-radius:28px;
     background:radial-gradient(circle at 20% 0%, rgba(255,255,255,0.26), transparent 32%);
     pointer-events:none;
 }
@@ -368,6 +370,7 @@ body.auth-open{
         inset 0 1px 0 rgba(255,255,255,0.52),
         0 18px 44px rgba(8,38,104,0.36),
         0 0 26px rgba(141,231,255,0.28);
+    z-index:20;
 }
 
 .cover-wrap{
@@ -419,10 +422,13 @@ body.auth-open{
 
 .card-actions{
     margin-top:auto;
+    position:relative;
+    z-index:30;
 }
 
 .custom-dropdown{
     position:relative;
+    z-index:40;
 }
 
 .dropdown-selected{
@@ -450,13 +456,13 @@ body.auth-open{
     display:none;
     flex-direction:column;
     gap:6px;
-    z-index:30;
+    z-index:999;
     padding:8px;
     border-radius:18px;
     border:1px solid rgba(255,255,255,0.34);
-    background:linear-gradient(180deg, rgba(223,247,255,0.26), rgba(255,255,255,0.12));
+    background:linear-gradient(180deg, rgba(223,247,255,0.35), rgba(255,255,255,0.18));
     backdrop-filter:blur(22px) saturate(170%);
-    box-shadow:var(--aero-shadow-strong);
+    box-shadow:0 22px 55px rgba(8,38,104,0.36);
 }
 
 .dropdown-menu.open{
@@ -501,7 +507,6 @@ body.auth-open{
     font-weight:700;
 }
 
-/* player */
 
 .music-player{
     position:fixed;
@@ -898,7 +903,6 @@ body.auth-open{
     display:none;
 }
 
-/* modals */
 
 .modal-overlay{
     position:fixed;
@@ -989,7 +993,6 @@ body.auth-open{
     color:#ffd7e5;
 }
 
-/* responsive */
 
 @media (max-width: 1100px){
     .app-shell{
