@@ -315,7 +315,7 @@
           applyLoggedOutUi();
         }
       } catch (error) {
-        console.error("[NeoWaves Auth]", error);
+        console.error("[Waves Auth]", error);
         if (user) {
           await applyLoggedInUi(user);
           showError("Вход выполнен, но профиль не удалось синхронизировать с NeoWaves.");
