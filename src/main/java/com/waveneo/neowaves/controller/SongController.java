@@ -26,23 +26,9 @@ public class SongController {
     private UserRepository userRepository;
 
     @GetMapping("/")
-    public String index(Model model, @RequestParam(required = false) String userEmail) {
-
+    public String index(Model model) {
         model.addAttribute("songs", songRepository.findAll());
-
-        if (userEmail == null || userEmail.trim().isEmpty() || userEmail.equals("null")) {
-            model.addAttribute("playlists", new ArrayList<Playlist>());
-        } else {
-            User user = userRepository.findByEmail(userEmail).orElse(null);
-            if (user != null) {
-                List<Playlist> userPlaylists = playlistRepository.findAll().stream()
-                        .filter(p -> p.getUser() != null && p.getUser().getEmail().equalsIgnoreCase(userEmail))
-                        .toList();
-                model.addAttribute("playlists", userPlaylists);
-            } else {
-                model.addAttribute("playlists", new ArrayList<Playlist>());
-            }
-        }
+        model.addAttribute("playlists", new ArrayList<Playlist>());
         return "index";
     }
 

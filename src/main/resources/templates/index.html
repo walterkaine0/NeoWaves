@@ -12,98 +12,61 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
 </head>
-<div id="auth-shell" class="nw-auth-shell force-open">
-    <div class="nw-auth-card">
-        <button id="auth-close-btn" class="nw-auth-close" type="button" aria-label="Закрыть">×</button>
+<div id="auth-modal" class="aero-auth-overlay">
+    <div class="aero-auth-card">
+        <div class="aero-auth-left">
+            <div class="aero-orb orb-a"></div>
+            <div class="aero-orb orb-b"></div>
 
-        <section class="nw-auth-left">
-            <div>
-                <p class="nw-auth-eyebrow">NeoWaves</p>
-                <h1 class="nw-auth-title">Музыка, плейлисты и своя волна.</h1>
-                <p class="nw-auth-subtitle">
-                    Вход в стиле Spotify, но адаптированный под NeoWaves: тёмная сцена,
-                    акцент на библиотеку, быстрый Google sign-in и обычная регистрация по e-mail.
-                </p>
+            <div class="aero-brand">NeoWaves</div>
+            <h1>Войди в свою волну</h1>
+            <p>
+                Музыка, плейлисты
+            </p>
 
-                <ul class="nw-auth-bullets">
-                    <li>Google sign-in без лишних экранов</li>
-                    <li>Регистрация по e-mail и паролю</li>
-                    <li>Восстановление пароля в один шаг</li>
-                    <li>Без перезагрузки страницы после входа</li>
-                </ul>
+            <ul class="aero-feature-list">
+                <li>Google sign-in</li>
+                <li>Вход по e-mail и паролю</li>
+                <li>Регистрация</li>
+                <li>Сброс пароля</li>
+            </ul>
+        </div>
+
+        <div class="aero-auth-right">
+            <div class="aero-tabs">
+                <button class="aero-auth-tab is-active" data-tab="login" type="button">Вход</button>
+                <button class="aero-auth-tab" data-tab="register" type="button">Регистрация</button>
+                <button class="aero-auth-tab" data-tab="reset" type="button">Сброс</button>
             </div>
 
-            <div class="nw-auth-brand-chip">NeoWaves Desktop / Web</div>
-        </section>
+            <div id="auth-error" class="auth-hint auth-error" style="display:none;"></div>
+            <div id="auth-success" class="auth-hint auth-success" style="display:none;"></div>
 
-        <section class="nw-auth-right">
-            <div class="nw-auth-tabs">
-                <button class="nw-auth-tab is-active" type="button" data-mode="login">Вход</button>
-                <button class="nw-auth-tab" type="button" data-mode="register">Регистрация</button>
-                <button class="nw-auth-tab" type="button" data-mode="reset">Сброс пароля</button>
-            </div>
-
-            <div id="auth-error" class="nw-auth-message is-error" hidden></div>
-            <div id="auth-success" class="nw-auth-message is-success" hidden></div>
-
-            <button id="google-auth-btn" class="nw-auth-google" type="button">
+            <button id="google-auth-btn" class="aero-primary aero-google" type="button">
                 Продолжить через Google
             </button>
 
-            <div class="nw-auth-divider">или</div>
+            <div class="aero-divider"><span>или</span></div>
 
-            <div class="nw-auth-panels">
-                <form id="login-form" class="nw-auth-form is-visible" data-auth-panel="login">
-                    <label>
-                        <span>E-mail</span>
-                        <input id="login-email" type="email" required placeholder="name@example.com">
-                    </label>
+            <form id="auth-login-form" class="auth-tab-panel is-active">
+                <input id="login-email" class="aero-input" type="email" placeholder="E-mail" required>
+                <input id="login-password" class="aero-input" type="password" placeholder="Пароль" required>
+                <button class="aero-primary" type="submit">Войти</button>
+            </form>
 
-                    <label>
-                        <span>Пароль</span>
-                        <input id="login-password" type="password" required minlength="6" placeholder="••••••••">
-                    </label>
+            <form id="auth-register-form" class="auth-tab-panel">
+                <input id="register-name" class="aero-input" type="text" placeholder="Имя" required>
+                <input id="register-email" class="aero-input" type="email" placeholder="E-mail" required>
+                <input id="register-password" class="aero-input" type="password" placeholder="Пароль" required>
+                <input id="register-password-2" class="aero-input" type="password" placeholder="Повтор пароля" required>
+                <button class="aero-primary" type="submit">Создать аккаунт</button>
+            </form>
 
-                    <button class="nw-auth-submit" type="submit">Войти</button>
-                    <button class="nw-auth-link" type="button" data-switch-to="reset">Забыли пароль?</button>
-                </form>
-
-                <form id="register-form" class="nw-auth-form" data-auth-panel="register">
-                    <label>
-                        <span>Имя</span>
-                        <input id="register-name" type="text" required placeholder="Nik">
-                    </label>
-
-                    <label>
-                        <span>E-mail</span>
-                        <input id="register-email" type="email" required placeholder="name@example.com">
-                    </label>
-
-                    <label>
-                        <span>Пароль</span>
-                        <input id="register-password" type="password" required minlength="6" placeholder="Не короче 6 символов">
-                    </label>
-
-                    <label>
-                        <span>Повтор пароля</span>
-                        <input id="register-password-confirm" type="password" required minlength="6" placeholder="Повтори пароль">
-                    </label>
-
-                    <button class="nw-auth-submit" type="submit">Создать аккаунт</button>
-                    <button class="nw-auth-link" type="button" data-switch-to="login">Уже есть аккаунт?</button>
-                </form>
-
-                <form id="reset-form" class="nw-auth-form" data-auth-panel="reset">
-                    <label>
-                        <span>E-mail</span>
-                        <input id="reset-email" type="email" required placeholder="name@example.com">
-                    </label>
-
-                    <button class="nw-auth-submit" type="submit">Отправить письмо для сброса</button>
-                    <button class="nw-auth-link" type="button" data-switch-to="login">Назад ко входу</button>
-                </form>
-            </div>
-        </section>
+            <form id="auth-reset-form" class="auth-tab-panel">
+                <input id="reset-email" class="aero-input" type="email" placeholder="E-mail" required>
+                <button class="aero-primary" type="submit">Отправить письмо</button>
+            </form>
+        </div>
     </div>
 </div>
 
@@ -191,484 +154,610 @@
 </footer>
 
 <script th:inline="javascript">
-    const API_BASE = 'http://localhost:8081';
-        let songs = [];
-        /*[# th:each="s : ${songs}"]*/
-            /*[# th:if="${s != null}"]*/
-            songs.push({
-                id: [[${s?.id}]],
-                title: [[${s?.title ?: 'Без названия'}]],
-                s3Url: [[${s?.s3Url ?: ''}]],
-                coverUrl: [[${s?.album?.coverUrl ?: ''}]],
-                artist: [[${s?.album?.artist?.name ?: 'Неизвестен'}]]
-            });
-            /*[/]*/
-        /*[/]*/
-        let currentIndex = null;
-        const audio = document.getElementById('main-audio');
-        const playBtn = document.getElementById('play-btn');
+    const API_BASE = window.location.origin;
 
-        function loadTrack(index) {
-    if (songs.length === 0) return;
-    const s = songs[index];
+     let songs = [];
+     /*[# th:each="s : ${songs}"]*/
+     /*[# th:if="${s != null}"]*/
+     songs.push({
+         id: [[${s?.id}]],
+         title: [[${s?.title ?: 'Без названия'}]],
+         s3Url: [[${s?.s3Url ?: ''}]],
+         coverUrl: [[${s?.album?.coverUrl ?: '/img/default.png'}]],
+         artist: [[${s?.album?.artist?.name ?: 'Неизвестен'}]]
+     });
+     /*[/]*/
+     /*[/]*/
 
-    currentIndex = index;
-    window.currentTrackId = s.id;
+     let currentIndex = null;
+     let globalPlaylists = [];
+     let trackToDelete = { pId: null, sId: null };
+     let playlistIdToDelete = null;
 
-    document.getElementById('track-title').innerText = s.title;
-    document.getElementById('artist-name').innerText = s.artist;
-    document.getElementById('mini-cover').style.backgroundImage = `url('${s.coverUrl}')`;
+     const audio = document.getElementById('main-audio');
+     const playBtn = document.getElementById('play-btn');
 
-    const heartBtn = document.getElementById('main-like-btn');
-    if (heartBtn) {
-        heartBtn.classList.remove('liked');
+     const firebaseConfig = {
+         apiKey: "AIzaSyDJhWJDrW-rN2a3zFp_hAL5EWFn5UT9B28",
+         authDomain: "neowaves-824c3.firebaseapp.com",
+         projectId: "neowaves-824c3",
+         storageBucket: "neowaves-824c3.firebasestorage.app",
+         messagingSenderId: "398266414799",
+         appId: "1:398266414799:web:f58c71fe879b531f8b29ba",
+         measurementId: "G-YS6MJR4KBX"
+     };
+
+     if (!firebase.apps.length) {
+         firebase.initializeApp(firebaseConfig);
+     }
+
+     const auth = firebase.auth();
+
+     function authErrorText(error) {
+         const code = error?.code || "";
+         const map = {
+             "auth/invalid-email": "Неверный формат e-mail",
+             "auth/user-disabled": "Аккаунт отключён",
+             "auth/user-not-found": "Пользователь не найден",
+             "auth/wrong-password": "Неверный пароль",
+             "auth/invalid-credential": "Неверный e-mail или пароль",
+             "auth/email-already-in-use": "Этот e-mail уже используется",
+             "auth/weak-password": "Пароль должен быть не короче 6 символов",
+             "auth/network-request-failed": "Проблема с сетью"
+         };
+         return map[code] || "Не удалось выполнить действие";
+     }
+
+     function formatTime(seconds) {
+         const min = Math.floor(seconds / 60);
+         const sec = Math.floor(seconds % 60);
+         return min + ":" + (sec < 10 ? "0" + sec : sec);
+     }
+
+     function loadTrack(index) {
+         if (!songs.length || !songs[index]) return;
+
+         currentIndex = index;
+         const s = songs[index];
+         window.currentTrackId = s.id;
+
+         document.getElementById('track-title').innerText = s.title;
+         document.getElementById('artist-name').innerText = s.artist;
+         document.getElementById('mini-cover').style.backgroundImage = `url('${s.coverUrl}')`;
+
+         const heartBtn = document.getElementById('main-like-btn');
+         if (heartBtn) heartBtn.classList.remove('liked');
+
+         audio.src = s.s3Url;
+     }
+
+     window.playSpecific = (index) => {
+         if (!songs[index]) return;
+         loadTrack(index);
+         audio.play();
+         playBtn.innerText = "⏸️";
+     };
+
+     window.togglePlay = () => {
+         if (!audio.src && songs.length > 0) loadTrack(0);
+
+         if (audio.paused) {
+             audio.play();
+             playBtn.innerText = "⏸️";
+         } else {
+             audio.pause();
+             playBtn.innerText = "▶️";
+         }
+     };
+
+     window.nextTrack = () => {
+         if (!songs.length) return;
+         currentIndex = currentIndex === null ? 0 : (currentIndex + 1) % songs.length;
+         loadTrack(currentIndex);
+         audio.play();
+         playBtn.innerText = "⏸️";
+     };
+
+     window.prevTrack = () => {
+         if (!songs.length) return;
+         currentIndex = currentIndex === null ? 0 : (currentIndex - 1 + songs.length) % songs.length;
+         loadTrack(currentIndex);
+         audio.play();
+         playBtn.innerText = "⏸️";
+     };
+
+     audio.ontimeupdate = () => {
+         if (!audio.duration) return;
+         const pct = (audio.currentTime / audio.duration) * 100;
+         document.getElementById('progress-fill').style.width = pct + '%';
+         document.getElementById('current-time').innerText = formatTime(audio.currentTime);
+         document.getElementById('total-time').innerText = formatTime(audio.duration);
+     };
+    document.getElementById('progress-container').onclick = (e) => {
+        if (!audio.duration) return;
+        const width = e.currentTarget.clientWidth;
+        const clickX = e.offsetX;
+        audio.currentTime = (clickX / width) * audio.duration;
+    };
+
+    function showInfoModal(message) {
+        const infoModal = document.getElementById('infoModal');
+        if (!infoModal) return;
+        document.getElementById('infoModalText').innerText = message;
+        infoModal.style.display = 'flex';
     }
 
-    audio.src = s.s3Url;
-}
-
-        if (songs.length > 0) { loadTrack(0); }
-
-
-
-        window.nextTrack = function() {
-            if (songs.length === 0) return;
-            currentIndex = (currentIndex + 1) % songs.length;
-            loadTrack(currentIndex);
-            audio.play();
-            playBtn.innerText = "⏸";
-        };
-
-        window.prevTrack = function() {
-            if (songs.length === 0) return;
-            currentIndex = (currentIndex - 1 + songs.length) % songs.length;
-            loadTrack(currentIndex);
-            audio.play();
-            playBtn.innerText = "⏸";
-        };
-
-
-        audio.ontimeupdate = () => {
-            if (audio.duration) {
-                const pct = (audio.currentTime / audio.duration) * 100;
-                document.getElementById('progress-fill').style.width = pct + '%';
-                document.getElementById('current-time').innerText = formatTime(audio.currentTime);
-            }
-        };
-
-        document.getElementById('progress-container').onclick = (e) => {
-            const width = e.currentTarget.clientWidth;
-            const clickX = e.offsetX;
-            audio.currentTime = (clickX / width) * audio.duration;
-        };
-
-        function formatTime(s) {
-            let min = Math.floor(s / 60);
-            let sec = Math.floor(s % 60);
-            return min + ":" + (sec < 10 ? '0' + sec : sec);
-        }
-
-        window.openPlaylist = (id) => { console.log("Open playlist", id); };
-        window.handleDeletePlaylist = (id) => { console.log("Delete playlist", id); };
-
-        document.addEventListener("DOMContentLoaded", () => {
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyDJhWJDrW-rN2a3zFp_hAL5EWFn5UT9B28",
-              authDomain: "neowaves-824c3.firebaseapp.com",
-              projectId: "neowaves-824c3",
-              storageBucket: "neowaves-824c3.firebasestorage.app",
-              messagingSenderId: "398266414799",
-              appId: "1:398266414799:web:f58c71fe879b531f8b29ba",
-              measurementId: "G-YS6MJR4KBX"
-        };
-
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        const auth = firebase.auth();
-
-
-
-        window.handleLogin = () => {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    firebase.auth().signInWithPopup(provider)
-        .then((result) => {
-            console.log("Успешный вход:", result.user.email);
-            window.location.href = "/?userEmail=" + encodeURIComponent(result.user.email);
-        })
-        .catch((error) => {
-            console.error("Ошибка входа:", error);
-            firebase.auth().signInWithRedirect(provider);
-        });
-};
-
-
-        window.playSpecific = (index) => {
-    if (!songs[index]) return;
-
-    currentIndex = index;
-
-    const s = songs[index];
-    window.currentTrackId = s.id;
-
-    document.getElementById('track-title').innerText = s.title;
-    document.getElementById('artist-name').innerText = s.artist;
-    document.getElementById('mini-cover').style.backgroundImage = `url('${s.coverUrl}')`;
-    audio.src = s.s3Url;
-    audio.play();
-    document.getElementById('play-btn').innerText = "⏸";
-};
-
-        window.togglePlay = () => {
-            if (!audio.src && songs.length > 0) window.playSpecific(0);
-            if (audio.paused) { audio.play(); document.getElementById('play-btn').innerText = "⏸"; }
-            else { audio.pause(); document.getElementById('play-btn').innerText = "▶"; }
-        };
-
-         window.loadUserPlaylists = (email) => {
-        const container = document.getElementById('playlists-container');
-        if (!container) return;
-
-        fetch(`/playlist/user?email=${encodeURIComponent(email)}`)
-            .then(res => res.json())
-            .then(playlists => {
-                container.innerHTML = '';
-                playlists.forEach(pl => {
-                    const isFav = pl.name === 'Favorites';
-                    const div = document.createElement('div');
-                    div.className = 'playlist-item';
-                    div.style = "padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.05); cursor: pointer; display: flex; justify-content: space-between; align-items: center;";
-                    div.innerHTML = `
-                        <span>${isFav ? '💎' : '💿'} ${pl.name}</span>
-                        ${!isFav ? `<button onclick="event.stopPropagation(); handleDeletePlaylist(${pl.id})" style="color: grey; background: none; border: none;">×</button>` : ''}
-                    `;
-                    div.onclick = () => window.openPlaylist(pl.id);
-                    container.appendChild(div);
-                });
-            });
+    window.closeInfoModal = () => {
+        document.getElementById('infoModal').style.display = 'none';
     };
 
-        window.addSongToPlaylist = (playlistId, songId) => {
-        if (!playlistId) return;
-        fetch(`/playlist/${playlistId}/add/${songId}`, { method: 'POST' })
-            .then(res => res.text())
-            .then(msg => showModal(msg, "Плейлист"))
-            .catch(err => console.error("Ошибка добавления:", err));
-    };
-
-window.renderUserContent = (email) => {
-    fetch(`/playlist/user?email=${encodeURIComponent(email)}`)
-        .then(res => res.json())
-        .then(playlists => {
-            const container = document.getElementById('playlists-container');
-            if (container) {
-                container.innerHTML = playlists.map(pl => {
-                    const isFav = pl.name.toLowerCase() === 'favorites';
-                    return `
-                        <div class="playlist-item" onclick="openPlaylist(${pl.id})"
-                             style="padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.05); cursor: pointer; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <span>${isFav ? '💎' : '💿'} ${pl.name}</span>
-                            ${!isFav ? `<button onclick="event.stopPropagation(); handleDeletePlaylist(${pl.id})" style="background:none; border:none; color:rgba(255,255,255,0.4); cursor:pointer; font-size: 20px;">&times;</button>` : ''}
-                        </div>
-                    `;
-                }).join('');
-            }
-
-            document.querySelectorAll('.playlist-selector-container').forEach(div => {
-                const songId = div.getAttribute('data-song-id');
-                div.style.display = 'block';
-
-               div.innerHTML = `
-                    <div class="custom-dropdown">
-                        <div class="dropdown-selected" onclick="window.toggleDropdown(event, this)">
-                            + В плейлист <span>▼</span>
-                        </div>
-                        <div class="dropdown-menu" style="display: none; position: absolute; background: rgba(0,0,0,0.8); z-index: 1000; width: 100%;">
-                            ${playlists.map(pl => `
-                                <div class="dropdown-item" onclick="window.addSongToPlaylist(${pl.id}, ${songId}); this.parentElement.style.display='none'">
-                                    ${pl.name}
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                `;
-            });
-        });
-};
-
-        window.handleLike = () => {
-    const u = firebase.auth().currentUser;
-    if (!u) return showModal("Войдите в аккаунт!");
-
-    const trackId = window.currentTrackId;
-    if (!trackId) return showModal("Сначала выберите трек!");
-
-    const heartBtn = document.getElementById('main-like-btn');
-
-    fetch(`/like/${trackId}?userEmail=${encodeURIComponent(u.email)}`, { method: 'POST' })
-        .then(r => r.text())
-        .then(message => {
-            console.log("Ответ сервера:", message);
-
-            heartBtn.classList.toggle('liked');
-        })
-        .catch(err => console.error("Ошибка лайка:", err));
-};
-
-    const API_BASE = 'http://localhost:8081';
-    let globalPlaylists = [];
-    let songs = [];
-    let trackToDelete = { pId: null, sId: null };
-
-
-    window.onload = () => {
-        window.loadSidebar();
-    };
-
-    window.loadSidebar = () => {
-    const user = firebase.auth().currentUser;
-
-    if (!user) {
-        const container = document.getElementById('playlists-container');
-        if (container) container.innerHTML = '';
-        return;
-    }
-
-    const email = user.email;
-
-    fetch(`${API_BASE}/playlist/user?email=${encodeURIComponent(email)}`)
-        .then(res => res.json())
-        .then(data => {
-            globalPlaylists = data;
-            const container = document.getElementById('playlists-container');
-            if (container) {
-                container.innerHTML = '';
-                data.forEach(p => {
-                    const isFav = p.name === 'Favorites';
-                    const item = document.createElement('div');
-                    item.className = 'playlist-item';
-                    item.style = "display: flex; justify-content: space-between; align-items: center; cursor: pointer; padding: 5px 10px;";
-                    item.onclick = () => window.openPlaylist(p.id);
-
-                    item.innerHTML = `
-                        <span>${isFav ? '💎' : '💿'} ${p.name}</span>
-                        ${!isFav ? `
-                            <span onclick="window.handleDeletePlaylist(event, ${p.id})"
-                                  style="color: rgba(255,255,255,0.5); font-size: 18px; font-weight: bold; padding: 0 5px;">×</span>
-                        ` : ''}
-                    `;
-                    container.appendChild(item);
-                });
-            }
-            window.updateAllSelects();
-        });
-};
-
-    window.handleCreatePlaylist = () => {
-        document.getElementById('playlistModal').style.display = 'flex';
+    window.showModal = (message, title = "NeoWaves") => {
+        const modal = document.getElementById('universal-modal');
+        document.getElementById('modal-title').innerText = title;
+        document.getElementById('modal-message').innerText = message;
+        modal.style.display = 'flex';
     };
 
     window.closeModal = () => {
-        document.getElementById('playlistModal').style.display = 'none';
+        document.getElementById('universal-modal').style.display = 'none';
     };
 
-    window.confirmCreatePlaylist = () => {
-        const name = document.getElementById('newPlaylistName').value;
-        const u = firebase.auth().currentUser;
-        if (!name) return alert("Введите название!");
-        if (!u) return alert("Войдите в аккаунт!");
+    window.alert = (message) => showInfoModal(message);
 
-        fetch(`/playlist/create?name=${encodeURIComponent(name)}&userEmail=${encodeURIComponent(u.email)}`, { method: 'POST' })
-            .then(res => res.text())
-            .then(msg => {
-                alert(msg);
-                location.reload();
-            });
-        closePlaylistModal();
-    };
+    function renderPlaylists(playlists) {
+        globalPlaylists = playlists || [];
+        const container = document.getElementById('playlists-container');
+        if (!container) return;
 
-    window.closePlaylistModal = () => {
-    document.getElementById('playlistModal').style.display = 'none';
-};
+        container.innerHTML = '';
 
-   window.updateAllSelects = () => {
-    const containers = document.querySelectorAll('.playlist-selector-container');
-    containers.forEach(container => {
-        const songId = container.dataset.songId;
+        globalPlaylists.forEach(pl => {
+            const isFav = (pl.name || '').toLowerCase() === 'favorites';
 
-        const menuItemsHtml = globalPlaylists.map(p =>
-            `<div class="dropdown-item" onclick="window.confirmAddToPlaylist(${p.id}, ${songId})">${p.name}</div>`
-        ).join('');
+            const item = document.createElement('div');
+            item.className = 'playlist-item';
+            item.style.cssText = 'display:flex;justify-content:space-between;align-items:center;cursor:pointer;padding:10px 12px;';
+            item.onclick = () => window.openPlaylist(pl.id);
 
-        container.innerHTML = `
-            <div class="custom-dropdown">
-                <div class="dropdown-selected" onclick="window.toggleDropdown(event, this)">
-                    <span>🫧 + В плейлист</span>
-                    <span>▼</span>
+            item.innerHTML = `
+                <span>${isFav ? '💎' : '💿'} ${pl.name}</span>
+                ${!isFav ? `<span onclick="event.stopPropagation(); window.handleDeletePlaylist(${pl.id})" style="opacity:.7;font-size:18px;padding-left:10px;">×</span>` : ''}
+            `;
+
+            container.appendChild(item);
+        });
+
+        window.updateAllSelects();
+    }
+
+    async function loadSidebar(emailOverride) {
+        const effectiveEmail = emailOverride || auth.currentUser?.email;
+        const container = document.getElementById('playlists-container');
+
+        if (!effectiveEmail) {
+            globalPlaylists = [];
+            if (container) container.innerHTML = '';
+            window.updateAllSelects();
+            return;
+        }
+
+        const response = await fetch(`${API_BASE}/playlist/user?email=${encodeURIComponent(effectiveEmail)}`);
+        const playlists = await response.json();
+        renderPlaylists(playlists);
+    }
+
+    window.loadSidebar = loadSidebar;
+
+    window.updateAllSelects = () => {
+        const containers = document.querySelectorAll('.playlist-selector-container');
+
+        containers.forEach(container => {
+            const songId = container.dataset.songId;
+
+            const menuItemsHtml = globalPlaylists.map(p => `
+                <div class="dropdown-item" onclick="window.confirmAddToPlaylist(${p.id}, ${songId})">
+                    ${p.name}
                 </div>
-                <div class="dropdown-menu" id="menu-${songId}">
-                    ${menuItemsHtml}
-                </div>
-            </div>
-        `;
-    });
-};
+            `).join('');
 
-window.toggleDropdown = (event, element) => {
-    if (event) event.stopPropagation();
-
-    const container = (element && element.parentElement) ? element.parentElement : null;
-    if (!container) return console.error("Контейнер не найден");
-
-    const menu = container.querySelector('.dropdown-menu');
-    if (!menu) return console.error("Меню не найдено");
-
-    document.querySelectorAll('.dropdown-menu').forEach(m => {
-        if (m !== menu) m.style.display = 'none';
-    });
-
-    menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
-};
-
-window.confirmAddToPlaylist = (playlistId, songId) => {
-    window.addToPlaylist(playlistId, songId);
-    document.querySelectorAll('.dropdown-menu').forEach(m => m.style.display = 'none');
-};
-
-window.openPlaylist = (id) => {
-    fetch(`${API_BASE}/playlist/${id}/songs`)
-        .then(r => r.json())
-        .then(data => {
-            if (data.length === 0) return window.alert("Плейлист пуст 🫧");
-
-            songs = data.map(s => ({
-                id: s.id,
-                title: s.title,
-                s3Url: s.s3Url,
-                coverUrl: s.album ? s.album.coverUrl : '/img/default-cover.png',
-                artist: (s.album && s.album.artist) ? s.album.artist.name : 'Unknown Artist'
-            }));
-
-            const grid = document.getElementById('content-grid');
-            grid.innerHTML = '';
-
-            songs.forEach((s, index) => {
-                const card = document.createElement('div');
-                card.className = 'album-card';
-                card.style = "background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.2); border-radius: 20px; padding: 15px; transition: 0.3s; cursor: pointer; display: flex; flex-direction: column; justify-content: space-between;";
-
-                card.innerHTML = `
-                    <div onclick="playSpecific(${index})" style="text-align: center;">
-                        <img src="${s.coverUrl}"
-                             style="width: 100%; border-radius: 15px; margin-bottom: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.3);"
-                             onerror="this.src='/img/default-cover.png'">
-                        <h4 style="margin-bottom: 5px; font-size: 16px; color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.5); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${s.title}</h4>
-                        <p style="font-size: 12px; opacity: 0.7; color: white; margin-bottom: 10px;">${s.artist}</p>
+            container.innerHTML = `
+                <div class="custom-dropdown">
+                    <div class="dropdown-selected" onclick="window.toggleDropdown(event, this)">
+                        <span>🫧 + В плейлист</span>
+                        <span>▼</span>
                     </div>
+                    <div class="dropdown-menu" id="menu-${songId}">
+                        ${menuItemsHtml}
+                    </div>
+                </div>
+            `;
+        });
+    };
 
-                    <button onclick="window.removeFromPlaylist(${id}, ${s.id})"
-                            style="width: 100%; background: linear-gradient(to bottom, rgba(255,75,43,0.3) 0%, rgba(255,0,0,0.2) 100%);
-                                   color: #ff4b2b; border: 1px solid rgba(255,75,43,0.5); border-radius: 12px;
-                                   padding: 8px; font-size: 11px; cursor: pointer; font-weight: 600;
-                                   transition: 0.3s; backdrop-filter: blur(5px);"
-                            onmouseover="this.style.background='rgba(255,75,43,0.5)'; this.style.color='white';"
-                            onmouseout="this.style.background='rgba(255,75,43,0.2)'; this.style.color='#ff4b2b';">
-                        🗑 Удалить
-                    </button>
-                `;
-                grid.appendChild(card);
-            });
-        })
-        .catch(err => console.error("Ошибка загрузки песен плейлиста:", err));
-};
+    window.toggleDropdown = (event, element) => {
+        if (event) event.stopPropagation();
 
-window.showModal = (message, title = "NeoWaves") => {
-    const modal = document.getElementById('universal-modal');
-    document.getElementById('modal-title').innerText = title;
-    document.getElementById('modal-message').innerText = message;
-    modal.style.display = 'flex';
-};
+        const wrapper = element?.parentElement;
+        if (!wrapper) return;
 
-window.closeModal = () => {
-    document.getElementById('universal-modal').style.display = 'none';
-};
+        const menu = wrapper.querySelector('.dropdown-menu');
+        if (!menu) return;
+    document.querySelectorAll('.dropdown-menu').forEach(m => {
+            if (m !== menu) m.style.display = 'none';
+        });
 
-window.showModal = (msg) => window.showModal(msg);
-    // Открытие модалки удаления трека
+        menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+    };
+
+    document.addEventListener('click', () => {
+        document.querySelectorAll('.dropdown-menu').forEach(m => m.style.display = 'none');
+    });
+
+    window.addSongToPlaylist = async (playlistId, songId) => {
+        if (!playlistId) return;
+
+        const res = await fetch(`${API_BASE}/playlist/${playlistId}/add/${songId}`, { method: 'POST' });
+        const msg = await res.text();
+        window.showModal(msg, "Плейлист");
+    };
+
+    window.confirmAddToPlaylist = (playlistId, songId) => {
+        window.addSongToPlaylist(playlistId, songId);
+        document.querySelectorAll('.dropdown-menu').forEach(m => m.style.display = 'none');
+    };
+
+    function renderPlaylistSongs(playlistId, data) {
+        const grid = document.getElementById('content-grid');
+        grid.innerHTML = '';
+
+        if (!data.length) {
+            grid.innerHTML = `
+                <div class="album-card" style="padding:24px;">
+                    <h4 style="margin:0 0 10px;">Плейлист пуст</h4>
+                    <p style="opacity:.8;margin:0;">Добавь треки через кнопку «В плейлист».</p>
+                </div>
+            `;
+            return;
+        }
+
+        songs = data.map(s => ({
+            id: s.id,
+            title: s.title,
+            s3Url: s.s3Url,
+            coverUrl: s.album ? s.album.coverUrl : '/img/default.png',
+            artist: (s.album && s.album.artist) ? s.album.artist.name : 'Unknown Artist'
+        }));
+
+        songs.forEach((s, index) => {
+            const card = document.createElement('div');
+            card.className = 'album-card';
+
+            card.innerHTML = `
+                <div onclick="playSpecific(${index})" style="text-align:center;">
+                    <img src="${s.coverUrl}" alt="Cover" onerror="this.src='/img/default.png'">
+                    <h4>${s.title}</h4>
+                    <p>${s.artist}</p>
+                </div>
+
+                <button onclick="window.removeFromPlaylist(${playlistId}, ${s.id})"
+                        class="btn-frutiger"
+                        style="width:100%;margin-top:12px;color:#ffd7e5;">
+                    🗑 Удалить
+                </button>
+            `;
+
+            grid.appendChild(card);
+        });
+    }
+
+    window.openPlaylist = async (id) => {
+        try {
+            const response = await fetch(`${API_BASE}/playlist/${id}/songs`);
+            const data = await response.json();
+            renderPlaylistSongs(id, data);
+        } catch (err) {
+            console.error("Ошибка загрузки песен плейлиста:", err);
+            window.alert("Не удалось загрузить плейлист");
+        }
+    };
+
     window.removeFromPlaylist = (playlistId, songId) => {
         trackToDelete = { pId: playlistId, sId: songId };
         document.getElementById('deleteTrackModal').style.display = 'flex';
     };
 
-let playlistIdToDelete = null;
-
-window.handleDeletePlaylist = (id) => {
-    const modal = document.getElementById('deleteModal');
-    const confirmBtn = document.getElementById('confirmDeleteBtn');
-    modal.style.display = 'flex';
-
-    confirmBtn.onclick = () => {
-        fetch(`/playlist/delete/${id}`, { method: 'POST' })
-            .then(res => {
-                if (res.ok) {
-                    alert("Плейлист удален");
-                    location.reload();
-                }
-            });
-        closeDeleteModal();
+    window.closeTrackModal = () => {
+        document.getElementById('deleteTrackModal').style.display = 'none';
     };
-};
 
-window.closeDeleteModal = () => {
-    document.getElementById('deleteModal').style.display = 'none';
-};
+    document.getElementById('confirmTrackDeleteBtn').onclick = async () => {
+        const { pId, sId } = trackToDelete;
+        const response = await fetch(`${API_BASE}/playlist/${pId}/remove/${sId}`, { method: 'POST' });
 
-window.closeDeleteModal = () => { document.getElementById('deleteModal').style.display = 'none'; };
-document.getElementById('confirmDeleteBtn').onclick = () => {
-    fetch(`${API_BASE}/playlist/delete/${playlistIdToDelete}`, { method: 'POST' })
-        .then(r => r.ok ? location.reload() : window.alert("Нельзя удалить Избранное 🫧"));
-};
+        if (response.ok) {
+            window.closeTrackModal();
+            window.openPlaylist(pId);
+        } else {
+            window.alert("Не удалось удалить трек");
+        }
+    };
 
-window.alert = (message) => {
-    const infoModal = document.getElementById('infoModal');
-    if (infoModal) {
-        document.getElementById('infoModalText').innerText = message;
-        infoModal.style.display = 'flex';
-    }
-};
+    window.handleDeletePlaylist = (id) => {
+        playlistIdToDelete = id;
+        document.getElementById('deleteModal').style.display = 'flex';
+    };
 
-window.closeInfoModal = () => {
-    document.getElementById('infoModal').style.display = 'none';
-};
+    window.closeDeleteModal = () => {
+        document.getElementById('deleteModal').style.display = 'none';
+    };
 
-window.closeTrackModal = () => document.getElementById('deleteTrackModal').style.display = 'none';
-document.getElementById('confirmTrackDeleteBtn').onclick = () => {
-    const { pId, sId } = trackToDelete;
-    fetch(`${API_BASE}/playlist/${pId}/remove/${sId}`, { method: 'POST' })
-        .then(r => {
-            if (r.ok) {
-                closeTrackModal();
-                window.openPlaylist(pId);
-            }
+    document.getElementById('confirmDeleteBtn').onclick = async () => {
+        if (!playlistIdToDelete) return;
+    const response = await fetch(`${API_BASE}/playlist/delete/${playlistIdToDelete}`, { method: 'POST' });
+        const msg = await response.text();
+
+        window.closeDeleteModal();
+
+        if (!response.ok) {
+            window.alert(msg || "Нельзя удалить плейлист");
+            return;
+        }
+
+        await loadSidebar();
+    };
+
+    window.handleCreatePlaylist = () => {
+        if (!auth.currentUser) {
+            window.alert("Войдите в аккаунт");
+            return;
+        }
+        document.getElementById('playlistModal').style.display = 'flex';
+    };
+
+    window.closePlaylistModal = () => {
+        document.getElementById('playlistModal').style.display = 'none';
+    };
+
+    window.confirmCreatePlaylist = async () => {
+        const name = document.getElementById('newPlaylistName').value.trim();
+        const u = auth.currentUser;
+
+        if (!name) return window.alert("Введите название");
+        if (!u) return window.alert("Войдите в аккаунт");
+
+        const res = await fetch(`${API_BASE}/playlist/create?name=${encodeURIComponent(name)}&userEmail=${encodeURIComponent(u.email)}`, {
+            method: 'POST'
         });
-};
 
-    document.addEventListener('click', () => {
-    document.querySelectorAll('.dropdown-menu').forEach(m => m.style.display = 'none');
-});
+        const msg = await res.text();
+        window.alert(msg);
 
-window.handleCreatePlaylist = () => {
-    const email = "denizshkololo@gmail.com";
-    if (!email) return window.alert("Войдите в аккаунт 🫧");
+        window.closePlaylistModal();
+        document.getElementById('newPlaylistName').value = '';
 
-    document.getElementById('playlistModal').style.display = 'flex';
-};
+        await loadSidebar(u.email);
+    };
 
-        if (songs.length > 0) loadTrack(0);
+    window.handleLike = async () => {
+        const u = auth.currentUser;
+        if (!u) return window.alert("Войдите в аккаунт");
 
+        const trackId = window.currentTrackId;
+        if (!trackId) return window.alert("Сначала выберите трек");
+
+        const heartBtn = document.getElementById('main-like-btn');
+
+        try {
+            const response = await fetch(`${API_BASE}/like/${trackId}?userEmail=${encodeURIComponent(u.email)}`, {
+                method: 'POST'
+            });
+
+            const message = await response.text();
+            console.log("Ответ сервера:", message);
+            heartBtn.classList.toggle('liked');
+        } catch (err) {
+            console.error("Ошибка лайка:", err);
+        }
+    };
+
+    async function syncUserOnBackend(user) {
+        const idToken = await user.getIdToken(true);
+
+        const response = await fetch('/api/auth/sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                token: idToken,
+                email: user.email,
+                username: user.displayName || user.email.split('@')[0]
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('Не удалось синхронизировать пользователя');
+        }
+    }
+
+    const authShell = document.getElementById('auth-shell');
+    const authCloseBtn = document.getElementById('auth-close-btn');
+    const authError = document.getElementById('auth-error');
+    const authSuccess = document.getElementById('auth-success');
+
+    function hideAuthMessages() {
+        authError.hidden = true;
+        authSuccess.hidden = true;
+        authError.textContent = '';
+        authSuccess.textContent = '';
+    }
+
+    function showAuthError(message) {
+        hideAuthMessages();
+        authError.hidden = false;
+        authError.textContent = message;
+    }
+
+    function showAuthSuccess(message) {
+        hideAuthMessages();
+        authSuccess.hidden = false;
+        authSuccess.textContent = message;
+    }
+
+    function switchAuthMode(mode) {
+        document.querySelectorAll('.nw-auth-tab').forEach(tab => {
+            tab.classList.toggle('is-active', tab.dataset.mode === mode);
+        });
+
+        document.querySelectorAll('[data-auth-panel]').forEach(panel => {
+            panel.classList.toggle('is-visible', panel.dataset.authPanel === mode);
+        });
+
+        hideAuthMessages();
+    }
+
+    function openAuthShell(mode = 'login') {
+        switchAuthMode(mode);
+        authShell.classList.add('is-open');
+        document.body.classList.add('auth-open');
+    }
+    function closeAuthShell() {
+        if (!auth.currentUser && authShell.classList.contains('force-open')) return;
+        authShell.classList.remove('is-open');
+        document.body.classList.remove('auth-open');
+        hideAuthMessages();
+    }
+
+    document.querySelectorAll('.nw-auth-tab').forEach(tab => {
+        tab.addEventListener('click', () => switchAuthMode(tab.dataset.mode));
     });
 
+    document.querySelectorAll('[data-switch-to]').forEach(btn => {
+        btn.addEventListener('click', () => switchAuthMode(btn.dataset.switchTo));
+    });
+
+    authCloseBtn.addEventListener('click', closeAuthShell);
+
+    document.getElementById('google-auth-btn').addEventListener('click', async () => {
+        hideAuthMessages();
+
+        const provider = new firebase.auth.GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
+
+        try {
+            await auth.signInWithPopup(provider);
+        } catch (error) {
+            console.error(error);
+            try {
+                await auth.signInWithRedirect(provider);
+            } catch (redirectError) {
+                console.error(redirectError);
+                showAuthError("Не удалось выполнить вход через Google");
+            }
+        }
+    });
+
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        hideAuthMessages();
+
+        const email = document.getElementById('login-email').value.trim();
+        const password = document.getElementById('login-password').value;
+
+        try {
+            await auth.signInWithEmailAndPassword(email, password);
+        } catch (error) {
+            console.error(error);
+            showAuthError(authErrorText(error));
+        }
+    });
+
+    document.getElementById('register-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        hideAuthMessages();
+
+        const name = document.getElementById('register-name').value.trim();
+        const email = document.getElementById('register-email').value.trim();
+        const password = document.getElementById('register-password').value;
+        const repeat = document.getElementById('register-password-confirm').value;
+
+        if (password !== repeat) {
+            showAuthError("Пароли не совпадают");
+            return;
+        }
+
+        try {
+            const cred = await auth.createUserWithEmailAndPassword(email, password);
+            if (cred.user) {
+                await cred.user.updateProfile({ displayName: name });
+            }
+            showAuthSuccess("Аккаунт создан");
+        } catch (error) {
+            console.error(error);
+            showAuthError(authErrorText(error));
+        }
+    });
+
+    document.getElementById('reset-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        hideAuthMessages();
+
+        const email = document.getElementById('reset-email').value.trim();
+
+        try {
+            await auth.sendPasswordResetEmail(email);
+            showAuthSuccess("Письмо для сброса пароля отправлено");
+        } catch (error) {
+            console.error(error);
+            showAuthError(authErrorText(error));
+        }
+    });
+
+    window.handleLogin = () => openAuthShell('login');
+    window.handleLogout = () => auth.signOut();
+
+    auth.getRedirectResult().catch(error => {
+        console.error(error);
+        showAuthError(authErrorText(error));
+    });
+
+    auth.onAuthStateChanged(async (user) => {
+        const loginBtn = document.getElementById('login-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const userName = document.getElementById('user-name');
+        const createBtn = document.getElementById('create-playlist-btn');
+        const playlistsContainer = document.getElementById('playlists-container');
+
+        if (user) {
+            try {
+                await syncUserOnBackend(user);
+            } catch (e) {
+                console.error(e);
+            }
+        loginBtn.style.setProperty('display', 'none', 'important');
+            logoutBtn.style.setProperty('display', 'inline-flex', 'important');
+            createBtn.style.display = 'block';
+            userName.innerText = user.displayName || user.email;
+
+            authShell.classList.remove('force-open');
+            closeAuthShell();
+
+            await loadSidebar(user.email);
+        } else {
+            loginBtn.style.setProperty('display', 'inline-flex', 'important');
+            logoutBtn.style.setProperty('display', 'none', 'important');
+            createBtn.style.display = 'none';
+            userName.innerText = '';
+            globalPlaylists = [];
+            playlistsContainer.innerHTML = '';
+            window.updateAllSelects();
+
+            authShell.classList.add('force-open');
+            openAuthShell('login');
+        }
+    });
+
+    if (songs.length > 0) {
+        loadTrack(0);
+    }
 </script>
 
 <div id="playlistModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.1); backdrop-filter: blur(10px); z-index:9999; justify-content:center; align-items:center;">
